@@ -1,17 +1,17 @@
 # Meta Field Type for Craft CMS
-[![Latest Version](https://img.shields.io/github/release/flipbox/meta.svg?style=flat-square)](https://github.com/flipbox/meta/releases)
+[![Latest Version](https://img.shields.io/github/release/flipboxfactory/meta.svg?style=flat-square)](https://github.com/flipboxfactory/meta/releases)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![Build Status](https://img.shields.io/travis/flipbox/meta/master.svg?style=flat-square)](https://travis-ci.org/flipbox/meta)
-[![Coverage Status](https://img.shields.io/scrutinizer/coverage/g/flipbox/meta.svg?style=flat-square)](https://scrutinizer-ci.com/g/flipbox/meta/code-structure)
-[![Quality Score](https://img.shields.io/scrutinizer/g/flipbox/meta.svg?style=flat-square)](https://scrutinizer-ci.com/g/flipbox/meta)
-[![Total Downloads](https://img.shields.io/packagist/dt/flipboxdigital/meta.svg?style=flat-square)](https://packagist.org/packages/flipboxdigital/meta)
+[![Build Status](https://img.shields.io/travis/flipboxfactory/meta/master.svg?style=flat-square)](https://travis-ci.org/flipboxfactory/meta)
+[![Coverage Status](https://img.shields.io/scrutinizer/coverage/g/flipboxfactory/meta.svg?style=flat-square)](https://scrutinizer-ci.com/g/flipboxfactory/meta/code-structure)
+[![Quality Score](https://img.shields.io/scrutinizer/g/flipboxfactory/meta.svg?style=flat-square)](https://scrutinizer-ci.com/g/flipboxfactory/meta)
+[![Total Downloads](https://img.shields.io/packagist/dt/flipboxfactory/meta.svg?style=flat-square)](https://packagist.org/packages/flipboxfactory/meta)
 
 ## Installation
 
 To install, use composer:
 
 ```
-composer require flipboxdigital/meta
+composer require flipboxfactory/meta
 ```
 
 ## Testing
@@ -22,7 +22,7 @@ $ ./vendor/bin/phpunit
 
 ## Contributing
 
-Please see [CONTRIBUTING](https://github.com/flipbox/meta/blob/master/CONTRIBUTING.md) for details.
+Please see [CONTRIBUTING](https://github.com/flipboxfactory/meta/blob/master/CONTRIBUTING.md) for details.
 
 
 ## Credits
@@ -31,4 +31,4 @@ Please see [CONTRIBUTING](https://github.com/flipbox/meta/blob/master/CONTRIBUTI
 
 ## License
 
-The MIT License (MIT). Please see [License File](https://github.com/flipbox/meta/blob/master/LICENSE) for more information.
+The MIT License (MIT). Please see [License File](https://github.com/flipboxfactory/meta/blob/master/LICENSE) for more information.

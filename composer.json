@@ -14,18 +14,18 @@
 	"license": "MIT",
 	"authors": [{
 		"name": "Flipbox Factory",
-		"email": "hello@flipboxdigital.com"
+		"email": "hello@flipboxfactory.com"
 	}],
 	"support": {
 		"email": "support@flipboxfactory.com",
-		"issues": "https://github.com/flipbox/meta/issues?state=open",
-		"source": "https://github.com/flipbox/meta",
-		"docs": "https://github.com/flipbox/meta",
-		"rss": "https://github.com/flipbox/meta/commits/master.atom"
+		"issues": "https://github.com/flipboxfactory/meta/issues?state=open",
+		"source": "https://github.com/flipboxfactory/meta",
+		"docs": "https://github.com/flipboxfactory/meta",
+		"rss": "https://github.com/flipboxfactory/meta/commits/master.atom"
 	},
 	"require": {
 		"craftcms/cms": "~3.0.0-beta.28",
-		"flipboxdigital/spark": "~1.0.0-beta.2"
+		"flipboxfactory/spark": "~1.0.0"
 	},
 	"require-dev": {
 		"mockery/mockery": "0.9.9",
@@ -45,8 +45,8 @@
 		"name": "Meta",
 		"handle": "meta",
 		"class": "flipbox\\meta\\Meta",
-		"changelogUrl": "https://raw.githubusercontent.com/flipbox/meta/master/CHANGELOG.md",
-		"downloadUrl": "https://github.com/flipbox/meta/archive/master.zip",
+		"changelogUrl": "https://raw.githubusercontent.com/flipboxfactory/meta/master/CHANGELOG.md",
+		"downloadUrl": "https://github.com/flipboxfactory/meta/archive/master.zip",
 		"hasCpSettings": false,
 		"hasCpSection": false,
 		"schemaVersion": "1.1.0",

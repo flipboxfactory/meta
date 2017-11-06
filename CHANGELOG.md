@@ -19,7 +19,7 @@ Changelog
 
 ## 1.0.0-beta.4 - 2017-07-13
 ### Fixed
-- Sort order not persisting after field save [#1](https://github.com/flipbox/meta/issues/1)
+- Sort order not persisting after field save [#1](https://github.com/flipboxfactory/meta/issues/1)
 - the `siteId` property was not getting set properly when deleting an element.
 
 ## 1.0.0-beta.3 - 2017-06-12
