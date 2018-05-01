@@ -1,5 +1,5 @@
 @charset "UTF-8";
-@import "../../../../../../../craftcms/cms/src/web/assets/shared";
+@import "../../../../../../../vendor/craftcms/cms/lib/craftcms-sass/mixins";
 
 /* ----------------------------------------
 /* Meta
@@ -34,7 +34,7 @@
     width: 200px;
     height: 100%;
     background: hsla($hue, 8%, 0%, 0.03);
-    @include box-shadow(inset -1px 0 0 rgba(0, 0, 0, 0.06));
+    //@include box-shadow(inset -1px 0 0 rgba(0, 0, 0, 0.06));
 
     &.fields {
       @include left(0);
@@ -56,7 +56,7 @@
   margin-top: -1px;
   @include padding(11px, 45px, 10px, 14px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  @include user-select(none);
+  //@include user-select(none);
   cursor: default;
 }
 
@@ -74,7 +74,7 @@
 
 .metaconfigitem .handle {
   font-size: 11px;
-  color: $mediumtextcolor;
+  //color: $mediumtextcolor;
 }
 
 .metaconfigitem .actions {
@@ -102,11 +102,11 @@
 }
 
 .metaconfigitem .actions .icon.settings.error:before {
-  color: $errorcolor;
+  //color: $errorcolor;
 }
 
 .metaconfigitem .actions .icon.settings:not(.disabled):hover:before {
-  color: $linkcolor;
+  //color: $linkcolor;
 }
 
 .meta-configuration .mc-sidebar .items .btn {
@@ -127,5 +127,5 @@
   margin: 0;
   padding: 7px 14px 6px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  @include linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.03));
+  //@include linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.03));
 }

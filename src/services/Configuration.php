@@ -36,42 +36,6 @@ use yii\base\Exception;
  */
 class Configuration extends Component
 {
-
-    /** Todo - do we need to always delete?
-     *
-     * @param MetaField $metaField
-     * @return bool
-     */
-    public function beforeSave(MetaField $metaField)
-    {
-
-//        var_dump($metaField->getFieldLayout()->getFields());
-//        exit;
-
-//        if (!$metaField->getIsNew()) {
-//            /** @var FieldRecord $fieldRecord */
-//            if ($oldFieldRecord = FieldRecord::findOne($metaField->id)) {
-//                /** @var FieldRecord $oldField */
-//                $oldField = Craft::$app->getFields()->createField(
-//                    $oldFieldRecord->toArray([
-//                        'id',
-//                        'type',
-//                        'name',
-//                        'handle',
-//                        'settings'
-//                    ])
-//                );
-//
-//                // Delete the old field layout
-//                if ($oldField instanceof MetaField) {
-//                    return Craft::$app->getFields()->deleteLayoutById($oldField->fieldLayoutId);
-//                }
-//            }
-//        }
-
-        return true;
-    }
-
     /**
      * Saves an Meta field's settings.
      *
@@ -214,7 +178,6 @@ class Configuration extends Component
      */
     public function beforeDelete(MetaField $field)
     {
-
         $transaction = Craft::$app->getDb()->beginTransaction();
         try {
             // Delete field layout
@@ -224,7 +187,9 @@ class Configuration extends Component
             $contentTableName = FieldHelper::getContentTableName($field->id);
 
             // Drop the content table
-            Craft::$app->getDb()->createCommand()->dropTableIfExists($contentTableName)->execute();
+            Craft::$app->getDb()->createCommand()
+                ->dropTableIfExists($contentTableName)
+                ->execute();
 
             // find any of the context fields
             $subFieldRecords = FieldRecord::find()
@@ -237,14 +202,10 @@ class Configuration extends Component
                 Craft::$app->getFields()->deleteFieldById($subFieldRecord->id);
             }
 
-            // All good
             $transaction->commit();
-
             return true;
         } catch (\Exception $e) {
-            // Revert
             $transaction->rollback();
-
             throw $e;
         }
     }
@@ -278,7 +239,7 @@ class Configuration extends Component
                 $field->name = '__blank__';
             }
 
-            if(!$field->validate()) {
+            if (!$field->validate()) {
                 $metaField->hasFieldErrors = true;
                 $validates = false;
             }

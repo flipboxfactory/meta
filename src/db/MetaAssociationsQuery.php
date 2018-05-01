@@ -8,6 +8,7 @@
 
 namespace flipbox\meta\db;
 
+use craft\db\QueryAbortedException;
 use flipbox\craft\sortable\associations\db\SortableAssociationQuery;
 use flipbox\meta\records\Meta as MetaRecord;
 
@@ -21,6 +22,8 @@ use flipbox\meta\records\Meta as MetaRecord;
  */
 class MetaAssociationsQuery extends SortableAssociationQuery
 {
+    use traits\Attributes;
+
     /**
      * @inheritdoc
      */
@@ -44,16 +47,18 @@ class MetaAssociationsQuery extends SortableAssociationQuery
     }
 
     /**
-     * Apply conditions
+     * @param $builder
+     * @return $this|void|\yii\db\Query
+     * @throws QueryAbortedException
      */
-    protected function applyConditions()
+    public function prepare($builder)
     {
-//        if ($this->typeId !== null) {
-//            $this->andWhere(Db::parseParam('typeId', $this->typeId));
-//        }
-//
-//        if ($this->organizationId !== null) {
-//            $this->andWhere(Db::parseParam('organizationId', $this->organizationId));
-//        }
+        if (($this->ownerId !== null && empty($this->ownerId)) ||
+            ($this->id !== null && empty($this->id))
+        ) {
+            throw new QueryAbortedException();
+        }
+
+        $this->applyConditions($this);
     }
 }

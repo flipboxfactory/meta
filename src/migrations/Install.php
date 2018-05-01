@@ -12,7 +12,6 @@ use Craft;
 use craft\db\Migration as InstallMigration;
 use craft\db\Query;
 use craft\records\Element as ElementRecord;
-use craft\records\Field as FieldRecord;
 use craft\records\Site as SiteRecord;
 use flipbox\meta\fields\Meta;
 use flipbox\meta\records\Meta as MetaRecord;
