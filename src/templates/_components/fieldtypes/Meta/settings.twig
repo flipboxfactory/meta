@@ -136,6 +136,9 @@
 {% endset %}
 
 <div id="meta-configuration" class="meta-configuration">
+    <input type="hidden" name="fieldLayoutId"
+           value="{{ field.fieldLayout.id }}">
+
     {{ forms.field({
         label: "Configuration"|t('app'),
         instructions: "Define the types of fields that can be created within this Meta field."|t('meta'),

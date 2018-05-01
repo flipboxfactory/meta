@@ -76,6 +76,8 @@ class Meta extends Field implements EagerLoadingFieldInterface
     protected $template = self::DEFAULT_TEMPLATE;
 
     /**
+     * Todo - Remove this (don't like it)
+     *
      * @var bool
      */
     public $hasFieldErrors = false;
@@ -99,8 +101,6 @@ class Meta extends Field implements EagerLoadingFieldInterface
     }
 
     /**
-     * Todo - Remove this (don't like it)
-     *
      * @inheritdoc
      */
     public static function hasContentColumn(): bool
@@ -435,21 +435,9 @@ class Meta extends Field implements EagerLoadingFieldInterface
         $this->getFieldLayout()->setFields($fields);
     }
 
-
     /*******************************************
      * EVENTS
      *******************************************/
-
-    /**
-     * @inheritdoc
-     */
-    public function beforeSave(bool $isNew): bool
-    {
-        if (!MetaPlugin::getInstance()->getConfiguration()->beforeSave($this)) {
-            return false;
-        }
-        return parent::beforeSave($isNew);
-    }
 
     /**
      * @inheritdoc

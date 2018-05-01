@@ -16,11 +16,9 @@ use craft\fields\Matrix;
 use craft\helpers\ArrayHelper;
 use craft\helpers\Json;
 use craft\helpers\StringHelper;
-use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
 use craft\records\Field as FieldRecord;
 use flipbox\meta\db\MetaQuery;
-use flipbox\meta\elements\Meta as MetaElement;
 use flipbox\meta\fields\Meta as MetaField;
 use flipbox\meta\helpers\Field as FieldHelper;
 use flipbox\meta\migrations\ContentTable;
@@ -128,13 +126,13 @@ class Configuration extends Component
             $contentService->fieldColumnPrefix = $originalFieldPrefix;
             $fieldsService->oldFieldColumnPrefix = $originalOldFieldPrefix;
 
+            $fieldLayout = $metaField->getFieldLayout();
+
             $fieldLayoutTab = new FieldLayoutTab();
             $fieldLayoutTab->name = 'Fields';
             $fieldLayoutTab->sortOrder = 1;
             $fieldLayoutTab->setFields($fieldLayoutFields);
 
-            $fieldLayout = new FieldLayout();
-            $fieldLayout->type = MetaElement::class;
             $fieldLayout->setTabs([$fieldLayoutTab]);
             $fieldLayout->setFields($fieldLayoutFields);
 
@@ -205,7 +203,9 @@ class Configuration extends Component
             $transaction->commit();
             return true;
         } catch (\Exception $e) {
+            // Revert
             $transaction->rollback();
+
             throw $e;
         }
     }
