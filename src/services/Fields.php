@@ -105,7 +105,7 @@ class Fields extends SortableFields
         $new = 0;
 
         foreach ($value->all() as $meta) {
-            $metaId = $meta->id ?? 'new' . ++$new;
+            $metaId = $meta->id ?? 'new'.++$new;
             $serialized[$metaId] = [
                 'enabled' => $meta->enabled,
                 'fields' => $meta->getSerializedFieldValues(),
@@ -282,6 +282,7 @@ class Fields extends SortableFields
             $query->enabledForSite = false;
             $elements = $query->all(); // existing meta
         }
+
 
         $transaction = Craft::$app->getDb()->beginTransaction();
         try {

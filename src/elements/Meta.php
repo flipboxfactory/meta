@@ -13,12 +13,13 @@ use craft\base\Element;
 use craft\elements\db\ElementQueryInterface;
 use craft\helpers\ArrayHelper;
 use craft\validators\SiteIdValidator;
+use flipbox\ember\helpers\ModelHelper;
 use flipbox\meta\db\MetaQuery;
 use flipbox\meta\fields\Meta as MetaField;
 use flipbox\meta\helpers\Field as FieldHelper;
 use flipbox\meta\Meta as MetaPlugin;
 use flipbox\meta\traits\OwnerAttribute;
-use flipbox\spark\helpers\ElementHelper;
+use craft\helpers\ElementHelper;
 use yii\base\Exception;
 
 /**
@@ -158,7 +159,7 @@ class Meta extends Element
                     ],
                     'safe',
                     'on' => [
-                        ElementHelper::SCENARIO_DEFAULT
+                        ModelHelper::SCENARIO_DEFAULT
                     ]
                 ]
             ]

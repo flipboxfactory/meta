@@ -63,6 +63,25 @@ class MetaQuery extends ElementQuery implements SortableAssociationQueryInterfac
     }
 
     /**
+     * Sets the [[ownerSiteId]] and [[siteId]] properties.
+     *
+     * @param int|string|null $value The property value
+     * @return static self reference
+     */
+    public function ownerSiteId($value)
+    {
+        $this->ownerSiteId = $value;
+
+        if ($value && strtolower($value) !== ':empty:') {
+            // A block will never exist in a site that is different than its ownerSiteId,
+            // so let's set the siteId param here too.
+            $this->siteId = (int)$value;
+        }
+
+        return $this;
+    }
+
+    /**
      * Join element/content tables
      */
     private function joinTables()

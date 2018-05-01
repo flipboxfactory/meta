@@ -124,7 +124,7 @@ class Records extends SortableAssociations
             ->where([
                 static::SOURCE_ATTRIBUTE => $source,
                 'fieldId' => $fieldId,
-                'siteId' => $siteId
+                'ownerSiteId' => $siteId
             ])
             ->orderBy(['sortOrder' => SORT_ASC]);
     }

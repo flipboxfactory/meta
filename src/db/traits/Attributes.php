@@ -19,10 +19,7 @@ use yii\db\QueryInterface;
  */
 trait Attributes
 {
-    /**
-     * @var int|int[]|false|null The Id(s). Prefix Ids with "not " to exclude them.
-     */
-    public $id;
+
 
     /**
      * @var int|int[]|false|null The field ID(s). Prefix IDs with "not " to exclude them.
@@ -114,10 +111,6 @@ trait Attributes
      */
     protected function applyConditions(QueryInterface $query)
     {
-        if ($this->id !== null) {
-            $query->andWhere(Db::parseParam('id', $this->id));
-        }
-
         if ($this->fieldId !== null) {
             $query->andWhere(Db::parseParam('fieldId', $this->fieldId));
         }
