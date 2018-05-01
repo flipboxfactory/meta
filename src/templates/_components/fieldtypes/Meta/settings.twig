@@ -167,11 +167,11 @@
     {{ forms.lightswitchField({
         label: "Input Template"|t('app'),
         name: "templateOverride",
-        on: field.template != field.defaultTemplate,
+        on: field.template != defaultTemplate,
         toggle: "template-override"
     }) }}
 
-    <div id="template-override" class="{% if field.template == field.defaultTemplate %}hidden{% endif %}">
+    <div id="template-override" class="{% if field.template == defaultTemplate %}hidden{% endif %}">
         {{ forms.textField({
             label: "Template Path"|t('app'),
             instructions: "The template path used to render the fields in the CP."|t('app'),

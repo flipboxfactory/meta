@@ -23,7 +23,6 @@ use flipbox\meta\records\Meta as MetaRecord;
  */
 class Install extends InstallMigration
 {
-
     /**
      * @inheritdoc
      */
@@ -39,7 +38,6 @@ class Install extends InstallMigration
      */
     public function safeDown()
     {
-
         $fieldIds = (new Query())
             ->select([
                 'id'
@@ -67,7 +65,6 @@ class Install extends InstallMigration
      */
     protected function createTables()
     {
-
         $this->createTable(MetaRecord::tableName(), [
             'id' => $this->integer()->notNull(),
             'ownerId' => $this->integer()->notNull(),
@@ -152,7 +149,7 @@ class Install extends InstallMigration
             $this->db->getForeignKeyName(MetaRecord::tableName(), 'fieldId'),
             MetaRecord::tableName(),
             'fieldId',
-            FieldRecord::tableName(),
+            Field::tableName(),
             'id',
             'CASCADE',
             null

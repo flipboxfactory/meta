@@ -6,7 +6,7 @@
  * @link       https://www.flipboxfactory.com/software/meta/
  */
 
-namespace flipbox\meta\elements\db;
+namespace flipbox\meta\db;
 
 use Craft;
 use craft\base\Element;
@@ -15,10 +15,10 @@ use craft\db\Query;
 use craft\elements\db\ElementQuery;
 use craft\helpers\Db as DbHelper;
 use craft\models\Site;
+use flipbox\craft\sortable\associations\db\SortableAssociationQueryInterface;
 use flipbox\meta\elements\Meta as MetaElement;
 use flipbox\meta\fields\Meta as MetaField;
 use flipbox\meta\helpers\Field as FieldHelper;
-use flipbox\meta\Meta as MetaPlugin;
 use flipbox\meta\records\Meta as MetaRecord;
 use yii\base\Exception;
 
@@ -31,9 +31,8 @@ use yii\base\Exception;
  * @method MetaElement[]|array all($db = null)
  * @method MetaElement|null one($db = null)
  */
-class Meta extends ElementQuery
+class MetaQuery extends ElementQuery implements SortableAssociationQueryInterface
 {
-
     /**
      * The field ID(s) that the resulting Meta must belong to.
      *
@@ -195,7 +194,7 @@ class Meta extends ElementQuery
             $field = Craft::$app->getFields()->getFieldById($this->fieldId);
 
             if ($field) {
-                $this->contentTable = MetaPlugin::getInstance()->getField()->getContentTableName($field);
+                $this->contentTable = FieldHelper::getContentTableName($field->id);
             }
         }
 

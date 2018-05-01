@@ -10,17 +10,14 @@ namespace flipbox\meta\elements;
 
 use Craft;
 use craft\base\Element;
-use craft\base\ElementInterface;
-use craft\base\FieldInterface;
 use craft\elements\db\ElementQueryInterface;
-use craft\fields\MissingField;
 use craft\helpers\ArrayHelper;
 use craft\validators\SiteIdValidator;
-use flipbox\meta\elements\db\Meta as MetaQuery;
+use flipbox\meta\db\MetaQuery;
 use flipbox\meta\fields\Meta as MetaField;
 use flipbox\meta\helpers\Field as FieldHelper;
 use flipbox\meta\Meta as MetaPlugin;
-use flipbox\meta\records\Meta as MetaRecord;
+use flipbox\meta\traits\OwnerAttribute;
 use flipbox\spark\helpers\ElementHelper;
 use yii\base\Exception;
 
@@ -30,15 +27,12 @@ use yii\base\Exception;
  */
 class Meta extends Element
 {
+    use OwnerAttribute;
+
     /**
      * @var int|null Field ID
      */
     public $fieldId;
-
-    /**
-     * @var int|null Owner ID
-     */
-    public $ownerId;
 
     /**
      * @var int|null Owner site ID
@@ -49,11 +43,6 @@ class Meta extends Element
      * @var int|null Sort order
      */
     public $sortOrder;
-
-    /**
-     * @var ElementInterface|false|null The owner element, or false if [[ownerId]] is invalid
-     */
-    private $owner;
 
     /**
      * @inheritdoc
@@ -181,7 +170,7 @@ class Meta extends Element
      */
     public function getFieldLayout()
     {
-        return $this->getField()->getFieldLayout();
+        return parent::getFieldLayout() ?? $this->getField()->getFieldLayout();
     }
 
     /**
@@ -199,7 +188,6 @@ class Meta extends Element
         $owner = $this->getOwner();
 
         if ($owner) {
-            // Just send back an array of site IDs -- don't pass along enabledByDefault configs
             $siteIds = [];
 
             foreach (ElementHelper::supportedSitesForElement($owner) as $siteInfo) {
@@ -213,47 +201,11 @@ class Meta extends Element
     }
 
     /**
-     * Returns the owner.
-     *
-     * @return ElementInterface|null
-     */
-    public function getOwner()
-    {
-        if ($this->owner !== null) {
-            return $this->owner !== false ? $this->owner : null;
-        }
-
-        if ($this->ownerId === null) {
-            return null;
-        }
-
-        if (($this->owner = Craft::$app->getElements()->getElementById($this->ownerId, null, $this->siteId)) === null) {
-            // Be forgiving of invalid ownerId's in this case, since the field
-            // could be in the process of being saved to a new element/site
-            $this->owner = false;
-
-            return null;
-        }
-
-        return $this->owner;
-    }
-
-    /**
-     * Sets the owner
-     *
-     * @param ElementInterface $owner
-     */
-    public function setOwner(ElementInterface $owner)
-    {
-        $this->owner = $owner;
-    }
-
-    /**
      * @inheritdoc
      */
     public function getContentTable(): string
     {
-        return MetaPlugin::getInstance()->getField()->getContentTableName($this->getField());
+        return FieldHelper::getContentTableName($this->fieldId);
     }
 
     /**
@@ -264,36 +216,14 @@ class Meta extends Element
         return FieldHelper::getContextById($this->fieldId);
     }
 
-
-    /**
-     * @inheritdoc
-     */
-    public static function getFieldsForElementsQuery(ElementQueryInterface $query)
-    {
-        if (isset($query->fieldId) and !empty($query->fieldId)) {
-            // Get the field context
-            $fieldContext = FieldHelper::getContextById($query->fieldId);
-
-            // Get all fields (based on context);
-            return Craft::$app->getFields()->getAllFields($fieldContext);
-        }
-
-        return [];
-    }
-
     /**
      * @inheritdoc
      */
     public function getHasFreshContent(): bool
     {
-        // Defer to the owner element
         $owner = $this->getOwner();
-
         return $owner ? $owner->getHasFreshContent() : false;
     }
-
-    // Events
-    // -------------------------------------------------------------------------
 
     /**
      * @inheritdoc
@@ -301,49 +231,18 @@ class Meta extends Element
      */
     public function afterSave(bool $isNew)
     {
-        // Get the record
-        if (!$isNew) {
-            $record = MetaRecord::findOne($this->id);
-
-            if (!$record) {
-                throw new Exception('Invalid Meta Id: ' . $this->id);
-            }
-        } else {
-            $record = new MetaRecord();
-            $record->id = $this->id;
-        }
-
-        $record->fieldId = $this->fieldId;
-        $record->ownerId = $this->ownerId;
-        $record->ownerSiteId = $this->ownerSiteId;
-        $record->sortOrder = $this->sortOrder;
-        $record->save(false);
-
+        MetaPlugin::getInstance()->getElements()->afterSave($this, $isNew);
         parent::afterSave($isNew);
     }
-
-    // Private Methods
-    // =========================================================================
 
     /**
      * Returns the Meta field.
      *
-     * @return FieldInterface|MetaField
+     * @return MetaField
      */
     private function getField()
     {
         /** @noinspection PhpIncompatibleReturnTypeInspection */
-        if (!$this->fieldId) {
-
-            /** @var MissingField $newField */
-            $missingField = new MissingField();
-
-            /** @var MetaField $fallbackField */
-            $fallbackField = $missingField->createFallback(MetaField::class);
-
-            return $fallbackField;
-        }
-
         return Craft::$app->getFields()->getFieldById($this->fieldId);
     }
 }

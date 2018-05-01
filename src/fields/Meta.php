@@ -13,25 +13,16 @@ use craft\base\EagerLoadingFieldInterface;
 use craft\base\Element;
 use craft\base\ElementInterface;
 use craft\base\Field;
-use craft\base\FieldInterface;
 use craft\behaviors\FieldLayoutBehavior;
 use craft\db\Query;
-use craft\elements\db\ElementQuery;
 use craft\elements\db\ElementQueryInterface;
-use craft\fields\Matrix;
-use craft\fields\MissingField;
-use craft\fields\PlainText;
-use craft\helpers\Json;
-use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
 use craft\validators\ArrayValidator;
-use flipbox\meta\elements\db\Meta as MetaQuery;
+use flipbox\meta\db\MetaQuery;
 use flipbox\meta\elements\Meta as MetaElement;
 use flipbox\meta\helpers\Field as FieldHelper;
 use flipbox\meta\Meta as MetaPlugin;
 use flipbox\meta\records\Meta as MetaRecord;
-use flipbox\meta\web\assets\input\Input as MetaInputAsset;
-use flipbox\meta\web\assets\settings\Settings as MetaSettingsAsset;
 
 /**
  * @author Flipbox Factory <hello@flipboxfactory.com>
@@ -42,15 +33,21 @@ use flipbox\meta\web\assets\settings\Settings as MetaSettingsAsset;
  */
 class Meta extends Field implements EagerLoadingFieldInterface
 {
-
+    /**
+     * Default layout template
+     */
     const DEFAULT_TEMPLATE = FieldHelper::TEMPLATE_PATH . DIRECTORY_SEPARATOR . 'layout';
 
     /**
+     * Maximum number of meta
+     *
      * @var int|null
      */
     public $max;
 
     /**
+     * Minimum number of meta
+     *
      * @var int|null
      */
     public $min;
@@ -61,6 +58,8 @@ class Meta extends Field implements EagerLoadingFieldInterface
     public $selectionLabel = "Add meta";
 
     /**
+     * Whether each site should get its own unique set of meta
+     *
      * @var int
      */
     public $localize = false;
@@ -69,11 +68,6 @@ class Meta extends Field implements EagerLoadingFieldInterface
      * @var int|null
      */
     public $fieldLayoutId;
-
-    /**
-     * @var bool
-     */
-    public $templateOverride = false;
 
     /**
      * @var string
@@ -98,7 +92,6 @@ class Meta extends Field implements EagerLoadingFieldInterface
      */
     public static function supportedTranslationMethods(): array
     {
-        // Don't ever automatically propagate values to other sites.
         return [
             self::TRANSLATION_METHOD_SITE,
         ];
@@ -122,8 +115,8 @@ class Meta extends Field implements EagerLoadingFieldInterface
             'min',
             'selectionLabel',
             'fieldLayoutId',
-            'templateOverride',
-            'template'
+            'template',
+            'localize'
         ];
     }
 
@@ -135,8 +128,8 @@ class Meta extends Field implements EagerLoadingFieldInterface
         return [
             'fieldLayout' => [
                 'class' => FieldLayoutBehavior::class,
-                'elementType' => self::class
-            ],
+                'elementType' => MetaElement::class
+            ]
         ];
     }
 
@@ -155,10 +148,120 @@ class Meta extends Field implements EagerLoadingFieldInterface
                     ],
                     'integer',
                     'min' => 0
+                ],
+                [
+                    [
+                        'id',
+                        'fieldId',
+                        'sortOrder'
+                    ],
+                    'number',
+                    'integerOnly' => true
                 ]
             ]
         );
     }
+
+
+    /*******************************************
+     * VALUE
+     *******************************************/
+
+    /**
+     * @inheritdoc
+     */
+    public function isValueEmpty($value, ElementInterface $element): bool
+    {
+        /** @var MetaQuery $value */
+        return $value->count() === 0;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function serializeValue($value, ElementInterface $element = null)
+    {
+        return MetaPlugin::getInstance()->getFields()->serializeValue($this, $value, $element);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function normalizeValue($value, ElementInterface $element = null)
+    {
+        return MetaPlugin::getInstance()->getFields()->normalizeValue($this, $value, $element);
+    }
+
+
+    /*******************************************
+     * QUERY
+     *******************************************/
+
+    /**
+     * @inheritdoc
+     */
+    public function modifyElementsQuery(ElementQueryInterface $query, $value)
+    {
+        return MetaPlugin::getInstance()->getFields()->modifyElementsQuery($this, $query, $value);
+    }
+
+
+    /*******************************************
+     * TEMPLATE GETTER/SETTER
+     *******************************************/
+
+    /**
+     * @return string
+     */
+    public function getTemplate(): string
+    {
+        return $this->template ?: self::DEFAULT_TEMPLATE;
+    }
+
+    /**
+     * @param $template
+     * @return $this
+     */
+    public function setTemplate(string $template = null)
+    {
+        $this->template = $template;
+        return $this;
+    }
+
+
+    /*******************************************
+     * HTML
+     *******************************************/
+
+    /**
+     * @inheritdoc
+     */
+    public function getInputHtml($value, ElementInterface $element = null): string
+    {
+        return MetaPlugin::getInstance()->getConfiguration()->getInputHtml($this, $value, $element);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getSettingsHtml()
+    {
+        return MetaPlugin::getInstance()->getConfiguration()->getSettingsHtml($this);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getStaticHtml($value, ElementInterface $element): string
+    {
+        // Todo - implement this
+        return '';
+    }
+
+
+    /*******************************************
+     * VALIDATION
+     *******************************************/
 
     /**
      * @inheritdoc
@@ -179,215 +282,20 @@ class Meta extends Field implements EagerLoadingFieldInterface
     /**
      * @inheritdoc
      */
-    public function getSettingsHtml()
-    {
-        // Get the available field types data
-        $fieldTypeInfo = $this->getFieldOptionsForConfiguration();
-
-        $view = Craft::$app->getView();
-
-        $view->registerAssetBundle(MetaSettingsAsset::class);
-        $view->registerJs(
-            'new Craft.MetaConfiguration(' .
-            Json::encode($fieldTypeInfo, JSON_UNESCAPED_UNICODE) . ', ' .
-            Json::encode(Craft::$app->getView()->getNamespace(), JSON_UNESCAPED_UNICODE) .
-            ');'
-        );
-
-        $view->registerTranslations('meta', [
-            'New field'
-        ]);
-
-        $fieldTypeOptions = [];
-
-        /** @var Field|string $class */
-        foreach (Craft::$app->getFields()->getAllFieldTypes() as $class) {
-            $fieldTypeOptions[] = [
-                'value' => $class,
-                'label' => $class::displayName()
-            ];
-        }
-
-        // Handle missing fields
-        $fields = $this->getFields();
-        foreach ($fields as $i => $field) {
-            if ($field instanceof MissingField) {
-                $fields[$i] = $field->createFallback(PlainText::class);
-                $fields[$i]->addError('type', Craft::t('app', 'The field type “{type}” could not be found.', [
-                    'type' => $field->expectedType
-                ]));
-                $this->hasFieldErrors = true;
-            }
-        }
-        $this->setFields($fields);
-
-        return Craft::$app->getView()->renderTemplate(
-            FieldHelper::TEMPLATE_PATH . DIRECTORY_SEPARATOR . 'settings',
-            [
-                'field' => $this,
-                'fieldTypes' => $fieldTypeOptions
-            ]
-        );
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function normalizeValue($value, ElementInterface $element = null)
-    {
-        /** @var Element|null $element */
-
-        if ($value instanceof MetaQuery) {
-            return $value;
-        }
-
-        // New element query
-        $query = MetaElement::find();
-
-        // Existing element?
-        if ($element && $element->id) {
-            $query->ownerId($element->id);
-        } else {
-            $query->id(false);
-        }
-
-        // Set our field and site to the query
-        $query
-            ->fieldId($this->id)
-            ->siteId($element->siteId);
-
-        // Set the initially matched elements if $value is already set, which is the case if there was a validation
-        // error or we're loading an entry revision.
-        if (is_array($value) || $value === '') {
-            $query->status = null;
-            $query->enabledForSite = false;
-            $query->limit = null;
-            $query->setCachedResult(
-                $this->createElementsFromSerializedData($value, $element)
-            );
-        }
-
-        return $query;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function modifyElementsQuery(ElementQueryInterface $query, $value)
-    {
-        /** @var ElementQuery $query */
-        if ($value === 'not :empty:') {
-            $value = ':notempty:';
-        }
-
-        if ($value === ':notempty:' || $value === ':empty:') {
-            $alias = MetaRecord::tableAlias() . '_' . $this->handle;
-            $operator = ($value === ':notempty:' ? '!=' : '=');
-
-            $query->subQuery->andWhere(
-                "(select count([[{$alias}.id]]) from " .
-                MetaRecord::tableName() .
-                " {{{$alias}}} where [[{$alias}.ownerId]] = [[elements.id]]" .
-                " and [[{$alias}.fieldId]] = :fieldId) {$operator} 0",
-                [':fieldId' => $this->id]
-            );
-        } elseif ($value !== null) {
-            return false;
-        }
-
-        return null;
-    }
-
-    /**
-     * @return string
-     */
-    public function getDefaultTemplate(): string
-    {
-        return $this->templateOverride ? $this->template : self::DEFAULT_TEMPLATE;
-    }
-
-    /**
-     * @return string
-     */
-    public function getTemplate(): string
-    {
-        return $this->templateOverride ? $this->template : self::DEFAULT_TEMPLATE;
-    }
-
-    /**
-     * @param $template
-     * @return $this
-     */
-    public function setTemplate($template)
-    {
-        if (!$this->templateOverride) {
-            $template = null;
-        }
-        $this->template = $template;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getInputHtml($value, ElementInterface $element = null): string
-    {
-        $id = Craft::$app->getView()->formatInputId($this->handle);
-
-        // Get the field data
-        $fieldInfo = $this->getFieldInfoForInput();
-
-        Craft::$app->getView()->registerAssetBundle(MetaInputAsset::class);
-
-        Craft::$app->getView()->registerJs(
-            'new Craft.MetaInput(' .
-            '"' . Craft::$app->getView()->namespaceInputId($id) . '", ' .
-            Json::encode($fieldInfo, JSON_UNESCAPED_UNICODE) . ', ' .
-            '"' . Craft::$app->getView()->namespaceInputName($this->handle) . '", ' .
-            ($this->min ?: 'null') . ', ' .
-            ($this->max ?: 'null') .
-            ');'
-        );
-
-        Craft::$app->getView()->registerTranslations('meta', [
-            'Add new',
-            'Add new above'
-        ]);
-
-        if ($value instanceof MetaQuery) {
-            $value
-                ->limit(null)
-                ->status(null)
-                ->enabledForSite(false);
-        }
-
-        return Craft::$app->getView()->renderTemplate(
-            FieldHelper::TEMPLATE_PATH . DIRECTORY_SEPARATOR . 'input',
-            [
-                'id' => $id,
-                'name' => $this->handle,
-                'field' => $this,
-                'elements' => $value,
-                'static' => false,
-                'template' => self::DEFAULT_TEMPLATE
-            ]
-        );
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function getElementValidationRules(): array
     {
         return [
             'validateMeta',
             [
                 ArrayValidator::class,
+                'min' => $this->min ?: null,
                 'max' => $this->max ?: null,
-                'tooMany' => Craft::t(
-                    'app',
-                    '{attribute} should contain at most {max, number} {max, plural, one{record} other{records}}.'
-                ),
+                'tooFew' => Craft::t('app',
+                    '{attribute} should contain at least {min, number} {min, plural, one{block} other{blocks}}.'),
+                'tooMany' => Craft::t('app',
+                    '{attribute} should contain at most {max, number} {max, plural, one{block} other{blocks}}.'),
+                'skipOnEmpty' => false,
+                'on' => Element::SCENARIO_LIVE,
             ],
         ];
     }
@@ -396,27 +304,30 @@ class Meta extends Field implements EagerLoadingFieldInterface
      * Validates an owner element’s Meta.
      *
      * @param ElementInterface $element
-     *
-     * @return void
      */
     public function validateMeta(ElementInterface $element)
     {
         /** @var Element $element */
         /** @var MetaQuery $value */
         $value = $element->getFieldValue($this->handle);
-        $validate = true;
 
-        foreach ($value->all() as $meta) {
+        foreach ($value->all() as $i => $meta) {
             /** @var MetaElement $meta */
+
+            if ($element->getScenario() === Element::SCENARIO_LIVE) {
+                $meta->setScenario(Element::SCENARIO_LIVE);
+            }
+
             if (!$meta->validate()) {
-                $validate = false;
+                $element->addModelErrors($meta, "{$this->handle}[{$i}]");
             }
         }
-
-        if (!$validate) {
-            $element->addError($this->handle, Craft::t('app', 'Correct the errors listed above.'));
-        }
     }
+
+
+    /*******************************************
+     * SEARCH
+     *******************************************/
 
     /**
      * @param mixed $value
@@ -451,32 +362,10 @@ class Meta extends Field implements EagerLoadingFieldInterface
         return parent::getSearchKeywords($keywords, $element);
     }
 
-    /**
-     * todo - review this
-     *
-     * @inheritdoc
-     */
-    public function getStaticHtml($value, ElementInterface $element): string
-    {
-        if ($value) {
-            $id = StringHelper::randomString();
-            return Craft::$app->getView()->renderTemplate(
-                FieldHelper::TEMPLATE_PATH . DIRECTORY_SEPARATOR . 'input',
-                [
-                    'id' => $id,
-                    'name' => $this->handle,
-                    'elements' => $value,
-                    'static' => true
-                ]
-            );
-        } else {
-            Craft::$app->getView()->registerTranslations('meta', [
-                'No meta'
-            ]);
 
-            return '<p class="light">' . Craft::t('meta', 'No meta') . '</p>';
-        }
-    }
+    /*******************************************
+     * EAGER LOADING
+     *******************************************/
 
     /**
      * @inheritdoc
@@ -508,17 +397,19 @@ class Meta extends Field implements EagerLoadingFieldInterface
         ];
     }
 
+
+    /*******************************************
+     * EVENTS
+     *******************************************/
+
     /**
      * @inheritdoc
      */
     public function beforeSave(bool $isNew): bool
     {
-        // Save field settings (and field content)
         if (!MetaPlugin::getInstance()->getConfiguration()->beforeSave($this)) {
             return false;
         }
-
-        // Trigger an 'afterSave' event
         return parent::beforeSave($isNew);
     }
 
@@ -527,10 +418,7 @@ class Meta extends Field implements EagerLoadingFieldInterface
      */
     public function afterSave(bool $isNew)
     {
-        // Save field settings (and field content)
         MetaPlugin::getInstance()->getConfiguration()->afterSave($this);
-
-        // Trigger an 'afterSave' event
         parent::afterSave($isNew);
     }
 
@@ -539,10 +427,7 @@ class Meta extends Field implements EagerLoadingFieldInterface
      */
     public function beforeDelete(): bool
     {
-        // Delete field content table
         MetaPlugin::getInstance()->getConfiguration()->beforeDelete($this);
-
-        // Trigger a 'beforeDelete' event
         return parent::beforeDelete();
     }
 
@@ -551,10 +436,7 @@ class Meta extends Field implements EagerLoadingFieldInterface
      */
     public function afterElementSave(ElementInterface $element, bool $isNew)
     {
-        // Save meta element
-        MetaPlugin::getInstance()->getField()->afterElementSave($this, $element);
-
-        // Trigger an 'afterElementSave' event
+        MetaPlugin::getInstance()->getFields()->afterElementSave($this, $element);
         parent::afterElementSave($element, $isNew);
     }
 
@@ -563,275 +445,9 @@ class Meta extends Field implements EagerLoadingFieldInterface
      */
     public function beforeElementDelete(ElementInterface $element): bool
     {
-        // Delete meta elements
-        if (!MetaPlugin::getInstance()->getField()->beforeElementDelete($this, $element)) {
+        if (!MetaPlugin::getInstance()->getFields()->beforeElementDelete($this, $element)) {
             return false;
         }
-
         return parent::beforeElementDelete($element);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function isValueEmpty($value, ElementInterface $element): bool
-    {
-        /** @var MetaQuery $value */
-        return $value->count() === 0;
-    }
-
-    /**
-     *
-     * Returns info about each field type for the configurator.
-     *
-     * @return array
-     */
-    private function getFieldOptionsForConfiguration()
-    {
-        $disallowedFields = [
-            self::class,
-            Matrix::class
-        ];
-
-        $fieldTypes = [];
-
-        // Set a temporary namespace for these
-        $originalNamespace = Craft::$app->getView()->getNamespace();
-        $namespace = Craft::$app->getView()->namespaceInputName('fields[__META_FIELD__][settings]', $originalNamespace);
-        Craft::$app->getView()->setNamespace($namespace);
-
-        /** @var Field|string $class */
-        foreach (Craft::$app->getFields()->getAllFieldTypes() as $class) {
-            // Ignore disallowed fields
-            if (in_array($class, $disallowedFields)) {
-                continue;
-            }
-
-            Craft::$app->getView()->startJsBuffer();
-
-            /** @var FieldInterface $field */
-            $field = new $class();
-
-            if ($settingsHtml = (string)$field->getSettingsHtml()) {
-                $settingsHtml = Craft::$app->getView()->namespaceInputs($settingsHtml);
-            }
-
-            $settingsBodyHtml = $settingsHtml;
-            $settingsFootHtml = Craft::$app->getView()->clearJsBuffer();
-
-            $fieldTypes[] = [
-                'type' => $class,
-                'name' => $class::displayName(),
-                'settingsBodyHtml' => $settingsBodyHtml,
-                'settingsFootHtml' => $settingsFootHtml,
-            ];
-        }
-
-        Craft::$app->getView()->setNamespace($originalNamespace);
-
-        return $fieldTypes;
-    }
-
-    /**
-     * Returns html for all associated field types for the Meta field input.
-     *
-     * @return array
-     */
-    private function getFieldInfoForInput(): array
-    {
-        // Set a temporary namespace for these
-        $originalNamespace = Craft::$app->getView()->getNamespace();
-        $namespace = Craft::$app->getView()->namespaceInputName(
-            $this->handle . '[__META__][fields]',
-            $originalNamespace
-        );
-        Craft::$app->getView()->setNamespace($namespace);
-
-        $fieldLayoutFields = $this->getFields();
-
-        // Set $_isFresh's
-        foreach ($fieldLayoutFields as $field) {
-            $field->setIsFresh(true);
-        }
-
-        Craft::$app->getView()->startJsBuffer();
-
-        $bodyHtml = Craft::$app->getView()->namespaceInputs(
-            Craft::$app->getView()->renderTemplate(
-                '_includes/fields',
-                [
-                    'namespace' => null,
-                    'fields' => $fieldLayoutFields
-                ]
-            )
-        );
-
-        // Reset $_isFresh's
-        foreach ($fieldLayoutFields as $field) {
-            $field->setIsFresh(null);
-        }
-
-        $footHtml = Craft::$app->getView()->clearJsBuffer();
-
-        $fields = [
-            'bodyHtml' => $bodyHtml,
-            'footHtml' => $footHtml,
-        ];
-
-        // Revert namespace
-        Craft::$app->getView()->setNamespace($originalNamespace);
-
-        return $fields;
-    }
-
-    /**
-     * Creates an array of elements based on the given serialized data.
-     *
-     * @param array|string $value The raw field value
-     * @param ElementInterface|null $element The element the field is associated with, if there is one
-     *
-     * @return MetaElement[]
-     */
-    private function createElementsFromSerializedData($value, ElementInterface $element = null): array
-    {
-        /** @var Element $element */
-
-        if (!is_array($value)) {
-            return [];
-        }
-
-        $oldElementsById = [];
-
-        // Get the old elements that are still around
-        if (!empty($element->id)) {
-            $ownerId = $element->id;
-
-            $ids = [];
-
-            foreach ($value as $metaId => &$meta) {
-                if (is_numeric($metaId) && $metaId !== 0) {
-                    $ids[] = $metaId;
-                }
-            }
-            unset($meta);
-
-            if (!empty($ids)) {
-                $oldMetaQuery = MetaElement::find();
-                $oldMetaQuery->fieldId($this->id);
-                $oldMetaQuery->ownerId($ownerId);
-                $oldMetaQuery->id($ids);
-                $oldMetaQuery->limit(null);
-                $oldMetaQuery->status(null);
-                $oldMetaQuery->enabledForSite(false);
-                $oldMetaQuery->siteId($element->siteId);
-                $oldMetaQuery->indexBy('id');
-                $oldElementsById = $oldMetaQuery->all();
-            }
-        } else {
-            $ownerId = null;
-        }
-
-        $elements = [];
-        $sortOrder = 0;
-        $prevElement = null;
-
-        foreach ($value as $metaId => $metaData) {
-            // Is this new? (Or has it been deleted?)
-            if (strpos($metaId, 'new') === 0 || !isset($oldElementsById[$metaId])) {
-                $meta = new MetaElement();
-                $meta->fieldId = $this->id;
-                $meta->ownerId = $ownerId;
-                $meta->siteId = $element->siteId;
-            } else {
-                $meta = $oldElementsById[$metaId];
-            }
-
-            $meta->setOwner($element);
-            $meta->enabled = (isset($metaData['enabled']) ? (bool)$metaData['enabled'] : true);
-
-            // Set the content post location on the element if we can
-            $fieldNamespace = $element->getFieldParamNamespace();
-
-            if ($fieldNamespace !== null) {
-                $metaFieldNamespace = ($fieldNamespace ? $fieldNamespace . '.' : '') .
-                    '.' . $this->handle .
-                    '.' . $metaId .
-                    '.fields';
-                $meta->setFieldParamNamespace($metaFieldNamespace);
-            }
-
-            if (isset($metaData['fields'])) {
-                $meta->setFieldValues($metaData['fields']);
-            }
-
-            $sortOrder++;
-            $meta->sortOrder = $sortOrder;
-
-            // Set the prev/next elements
-            if ($prevElement) {
-                /** @var ElementInterface $prevElement */
-                $prevElement->setNext($meta);
-                /** @var ElementInterface $meta */
-                $meta->setPrev($prevElement);
-            }
-            $prevElement = $meta;
-
-            $elements[] = $meta;
-        }
-
-        return $elements;
-    }
-
-    /**
-     * Returns the fields associated with this element.
-     *
-     * @return FieldInterface[]
-     */
-    public function getFields(): array
-    {
-        return $this->getFieldLayout()->getFields();
-    }
-
-    /**
-     * Sets the fields associated with this element.
-     *
-     * @param FieldInterface[] $fields
-     *
-     * @return void
-     */
-    public function setFields(array $fields)
-    {
-        $defaultFieldConfig = [
-            'type' => null,
-            'name' => null,
-            'handle' => null,
-            'instructions' => null,
-            'required' => false,
-            'translationMethod' => Field::TRANSLATION_METHOD_NONE,
-            'translationKeyFormat' => null,
-            'settings' => null,
-        ];
-
-        foreach ($fields as $fieldId => $fieldConfig) {
-            if (!$fieldConfig instanceof FieldInterface) {
-
-                /** @noinspection SlowArrayOperationsInLoopInspection */
-                $fieldConfig = array_merge($defaultFieldConfig, $fieldConfig);
-
-                $fields[$fieldId] = Craft::$app->getFields()->createField([
-                    'type' => $fieldConfig['type'],
-                    'id' => $fieldId,
-                    'name' => $fieldConfig['name'],
-                    'handle' => $fieldConfig['handle'],
-                    'instructions' => $fieldConfig['instructions'],
-                    'required' => (bool)$fieldConfig['required'],
-                    'translationMethod' => $fieldConfig['translationMethod'],
-                    'translationKeyFormat' => $fieldConfig['translationKeyFormat'],
-                    'settings' => $fieldConfig['settings'],
-                ]);
-            }
-        }
-
-        $this->getFieldLayout()->setFields($fields);
     }
 }

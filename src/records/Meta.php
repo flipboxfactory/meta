@@ -12,8 +12,10 @@ use craft\records\Element;
 use craft\records\Field;
 use craft\records\Site;
 use craft\validators\SiteIdValidator;
-use flipbox\spark\helpers\RecordHelper;
-use flipbox\spark\records\Record;
+use flipbox\craft\sortable\associations\records\SortableAssociationInterface;
+use flipbox\ember\helpers\ModelHelper;
+use flipbox\ember\records\ActiveRecordWithId;
+use flipbox\meta\Meta as MetaPlugin;
 use yii\db\ActiveQueryInterface;
 
 /**
@@ -30,13 +32,38 @@ use yii\db\ActiveQueryInterface;
  * @property Site $ownerSite Site
  * @property Field $field Field
  */
-class Meta extends Record
+class Meta extends ActiveRecordWithId implements SortableAssociationInterface
 {
-
     /**
      * The table alias
      */
     const TABLE_ALIAS = 'meta';
+
+    /**
+     * @inheritdoc
+     */
+    const TARGET_ATTRIBUTE = 'id';
+
+    /**
+     * @inheritdoc
+     */
+    const SOURCE_ATTRIBUTE = 'ownerId';
+
+    /**
+     * @inheritdoc
+     */
+    public function associate(bool $autoReorder = true): bool
+    {
+        return MetaPlugin::getInstance()->getRecords()->associate($this, $autoReorder);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function dissociate(bool $autoReorder = true): bool
+    {
+        return MetaPlugin::getInstance()->getRecords()->dissociate($this, $autoReorder);
+    }
 
     /**
      * @inheritdoc
@@ -61,7 +88,7 @@ class Meta extends Record
                     ],
                     'safe',
                     'on' => [
-                        RecordHelper::SCENARIO_DEFAULT
+                        ModelHelper::SCENARIO_DEFAULT
                     ]
                 ]
             ]

@@ -9,6 +9,8 @@
 namespace flipbox\meta\migrations;
 
 use craft\db\Migration;
+use craft\records\Element;
+use craft\records\Site;
 
 /**
  * @author Flipbox Factory <hello@flipboxfactory.com>
@@ -16,9 +18,10 @@ use craft\db\Migration;
  */
 class ContentTable extends Migration
 {
-
     /**
-     * @var string|null The table name
+     *  The table name
+     *
+     * @var string|null
      */
     public $tableName;
 
@@ -27,39 +30,41 @@ class ContentTable extends Migration
      */
     public function safeUp()
     {
-
-        $this->createTable($this->tableName, [
-            'id' => $this->primaryKey(),
-            'elementId' => $this->integer()->notNull(),
-            'siteId' => $this->integer()->notNull(),
-            'dateCreated' => $this->dateTime()->notNull(),
-            'dateUpdated' => $this->dateTime()->notNull(),
-            'uid' => $this->uid(),
-        ]);
+        $this->createTable(
+            $this->tableName,
+            [
+                'id' => $this->primaryKey(),
+                'elementId' => $this->integer()->notNull(),
+                'siteId' => $this->integer()->notNull(),
+                'dateCreated' => $this->dateTime()->notNull(),
+                'dateUpdated' => $this->dateTime()->notNull(),
+                'uid' => $this->uid(),
+            ]
+        );
 
         $this->createIndex(
-            $this->db->getIndexName($this->tableName, 'elementId,siteId'),
+            null,
             $this->tableName,
-            'elementId,siteId',
+            ['elementId', 'siteId'],
             true
         );
 
         $this->addForeignKey(
-            $this->db->getForeignKeyName($this->tableName, 'elementId'),
+            null,
             $this->tableName,
-            'elementId',
-            '{{%elements}}',
-            'id',
+            ['elementId'],
+            Element::tableName(),
+            ['id'],
             'CASCADE',
             null
         );
 
         $this->addForeignKey(
-            $this->db->getForeignKeyName($this->tableName, 'siteId'),
+            null,
             $this->tableName,
-            'siteId',
-            '{{%sites}}',
-            'id',
+            ['siteId'],
+            Site::tableName(),
+            ['id'],
             'CASCADE',
             'CASCADE'
         );

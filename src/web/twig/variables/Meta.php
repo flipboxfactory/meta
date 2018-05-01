@@ -24,7 +24,7 @@ class Meta
     public function create($criteria = null)
     {
         /** @var MetaElement $element */
-        $element = MetaPlugin::getInstance()->getMeta()->create($criteria);
+        $element = MetaPlugin::getInstance()->getElements()->create($criteria);
 
         return $element;
     }

@@ -1,10 +1,8 @@
 {
 	"name": "flipboxfactory/meta",
 	"description": "A simple, repeatable field type",
-	"version": "1.0.0-beta.8",
+	"version": "1.0.0-rc",
 	"type": "craft-plugin",
-	"minimum-stability": "beta",
-	"prefer-stable": true,
 	"keywords": [
 		"flipbox",
 		"meta",
@@ -24,18 +22,13 @@
 		"rss": "https://github.com/flipboxfactory/meta/commits/master.atom"
 	},
 	"require": {
-		"craftcms/cms": "~3.0.0-beta.28",
-		"flipboxfactory/craft-spark": "~1.0.0"
+		"craftcms/cms": "~3.0.0",
+		"flipboxfactory/craft-ember": "~1.0.0"
 	},
 	"require-dev": {
-		"mockery/mockery": "0.9.9",
 		"phpunit/phpunit": "^5.0",
 		"squizlabs/php_codesniffer": "^2.0"
 	},
-	"repositories": [{
-		"type": "composer",
-		"url": "https://asset-packagist.org"
-	}],
 	"autoload": {
 		"psr-4": {
 			"flipbox\\meta\\": "src/"
@@ -51,9 +44,10 @@
 		"hasCpSection": false,
 		"schemaVersion": "1.1.0",
 		"components": {
-			"meta": "flipbox\\meta\\services\\Meta",
-			"field": "flipbox\\meta\\services\\Field",
-			"configuration": "flipbox\\meta\\services\\Configuration"
+			"configuration": "flipbox\\meta\\services\\Configuration",
+			"elements": "flipbox\\meta\\services\\Elements",
+			"fields": "flipbox\\meta\\services\\Fields",
+			"records": "flipbox\\meta\\services\\Records"
 		}
 	}
 }
