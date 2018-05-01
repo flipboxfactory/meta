@@ -13,6 +13,7 @@ use craft\base\EagerLoadingFieldInterface;
 use craft\base\Element;
 use craft\base\ElementInterface;
 use craft\base\Field;
+use craft\base\FieldInterface;
 use craft\behaviors\FieldLayoutBehavior;
 use craft\db\Query;
 use craft\elements\db\ElementQueryInterface;
@@ -98,6 +99,8 @@ class Meta extends Field implements EagerLoadingFieldInterface
     }
 
     /**
+     * Todo - Remove this (don't like it)
+     *
      * @inheritdoc
      */
     public static function hasContentColumn(): bool
@@ -148,15 +151,6 @@ class Meta extends Field implements EagerLoadingFieldInterface
                     ],
                     'integer',
                     'min' => 0
-                ],
-                [
-                    [
-                        'id',
-                        'fieldId',
-                        'sortOrder'
-                    ],
-                    'number',
-                    'integerOnly' => true
                 ]
             ]
         );
@@ -395,6 +389,50 @@ class Meta extends Field implements EagerLoadingFieldInterface
             'map' => $map,
             'criteria' => ['fieldId' => $this->id]
         ];
+    }
+
+    /*******************************************
+     * FIELDS
+     *******************************************/
+
+    /**
+     * Fields are
+     * @param $fields
+     */
+    public function setFields(array $fields)
+    {
+        $defaultFieldConfig = [
+            'type' => null,
+            'name' => null,
+            'handle' => null,
+            'instructions' => null,
+            'required' => false,
+            'translationMethod' => Field::TRANSLATION_METHOD_NONE,
+            'translationKeyFormat' => null,
+            'settings' => null,
+        ];
+
+        foreach ($fields as $fieldId => $fieldConfig) {
+            if (!$fieldConfig instanceof FieldInterface) {
+
+                /** @noinspection SlowArrayOperationsInLoopInspection */
+                $fieldConfig = array_merge($defaultFieldConfig, $fieldConfig);
+
+                $fields[$fieldId] = Craft::$app->getFields()->createField([
+                    'type' => $fieldConfig['type'],
+                    'id' => $fieldId,
+                    'name' => $fieldConfig['name'],
+                    'handle' => $fieldConfig['handle'],
+                    'instructions' => $fieldConfig['instructions'],
+                    'required' => (bool)$fieldConfig['required'],
+                    'translationMethod' => $fieldConfig['translationMethod'],
+                    'translationKeyFormat' => $fieldConfig['translationKeyFormat'],
+                    'settings' => $fieldConfig['settings'],
+                ]);
+            }
+        }
+
+        $this->getFieldLayout()->setFields($fields);
     }
 
 

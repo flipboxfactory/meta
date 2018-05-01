@@ -47,14 +47,14 @@
                 {% endif %}
                 <div class="fields">
                     {% include [
-                    field.template,
-                    template
+                        field.template,
+                        template
                     ] with {
-                    namespace: name~'['~elementId~'][fields]',
-                    element: element,
-                    field: field,
-                    fields: element.getFieldLayout().getFields(),
-                    static: static
+                        namespace: name~'['~elementId~'][fields]',
+                        element: element,
+                        field: field,
+                        fields: element.getFieldLayout().getFields(),
+                        static: static
                     } only %}
                 </div>
             </div>

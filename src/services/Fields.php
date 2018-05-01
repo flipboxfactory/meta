@@ -141,7 +141,7 @@ class Fields extends SortableFields
         /** @var MetaElement|null $prevElement */
 
         // Get existing values
-        $existingValues = $element === null ? [] : $this->getExistingValues($value, $element);
+        $existingValues = $element === null ? [] : $this->getExistingValues($field, $value, $element);
         $ownerId = $element->id ?? null;
 
         foreach ($value as $metaId => $metaData) {
@@ -196,7 +196,7 @@ class Fields extends SortableFields
      * @param ElementInterface $element
      * @return array
      */
-    protected function getExistingValues(array $values, ElementInterface $element): array
+    protected function getExistingValues(MetaField $field, array $values, ElementInterface $element): array
     {
         /** @var Element $element */
         if (!empty($element->id)) {
@@ -210,7 +210,7 @@ class Fields extends SortableFields
 
             if (!empty($ids)) {
                 $oldMetaQuery = MetaPlugin::getInstance()->getElements()->getQuery();
-                $oldMetaQuery->fieldId($this->id);
+                $oldMetaQuery->fieldId($field->id);
                 $oldMetaQuery->ownerId($element->id);
                 $oldMetaQuery->id($ids);
                 $oldMetaQuery->limit(null);

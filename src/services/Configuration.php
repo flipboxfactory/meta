@@ -25,6 +25,7 @@ use flipbox\meta\fields\Meta as MetaField;
 use flipbox\meta\helpers\Field as FieldHelper;
 use flipbox\meta\migrations\ContentTable;
 use flipbox\meta\records\Meta as MetaRecord;
+use flipbox\meta\web\assets\input\Input;
 use flipbox\meta\web\assets\settings\Settings as MetaSettingsAsset;
 use yii\base\Component;
 use yii\base\Exception;
@@ -43,26 +44,30 @@ class Configuration extends Component
      */
     public function beforeSave(MetaField $metaField)
     {
-        if (!$metaField->getIsNew()) {
-            /** @var FieldRecord $fieldRecord */
-            if ($oldFieldRecord = FieldRecord::findOne($metaField->id)) {
-                /** @var FieldRecord $oldField */
-                $oldField = Craft::$app->getFields()->createField(
-                    $oldFieldRecord->toArray([
-                        'id',
-                        'type',
-                        'name',
-                        'handle',
-                        'settings'
-                    ])
-                );
 
-                // Delete the old field layout
-                if ($oldField instanceof MetaField) {
-                    return Craft::$app->getFields()->deleteLayoutById($oldField->fieldLayoutId);
-                }
-            }
-        }
+//        var_dump($metaField->getFieldLayout()->getFields());
+//        exit;
+
+//        if (!$metaField->getIsNew()) {
+//            /** @var FieldRecord $fieldRecord */
+//            if ($oldFieldRecord = FieldRecord::findOne($metaField->id)) {
+//                /** @var FieldRecord $oldField */
+//                $oldField = Craft::$app->getFields()->createField(
+//                    $oldFieldRecord->toArray([
+//                        'id',
+//                        'type',
+//                        'name',
+//                        'handle',
+//                        'settings'
+//                    ])
+//                );
+//
+//                // Delete the old field layout
+//                if ($oldField instanceof MetaField) {
+//                    return Craft::$app->getFields()->deleteLayoutById($oldField->fieldLayoutId);
+//                }
+//            }
+//        }
 
         return true;
     }
@@ -268,8 +273,12 @@ class Configuration extends Component
 
         /** @var FieldRecord $field */
         foreach ($metaField->getFieldLayout()->getFields() as $field) {
-            $field->validate();
-            if ($field->hasErrors()) {
+            // Hack to allow blank field names
+            if (!$field->name) {
+                $field->name = '__blank__';
+            }
+
+            if(!$field->validate()) {
                 $metaField->hasFieldErrors = true;
                 $validates = false;
             }
@@ -299,6 +308,15 @@ class Configuration extends Component
      * HTML
      *******************************************/
 
+    /**
+     * @param MetaField $field
+     * @param $value
+     * @param ElementInterface|null $element
+     * @return string
+     * @throws Exception
+     * @throws \Twig_Error_Loader
+     * @throws \yii\base\InvalidConfigException
+     */
     public function getInputHtml(MetaField $field, $value, ElementInterface $element = null): string
     {
         $id = Craft::$app->getView()->formatInputId($field->handle);
@@ -306,7 +324,7 @@ class Configuration extends Component
         // Get the field data
         $fieldInfo = $this->getFieldInfoForInput($field);
 
-        Craft::$app->getView()->registerAssetBundle(MetaInputAsset::class);
+        Craft::$app->getView()->registerAssetBundle(Input::class);
 
         Craft::$app->getView()->registerJs(
             'new Craft.MetaInput(' .
@@ -338,7 +356,7 @@ class Configuration extends Component
                 'field' => $field,
                 'elements' => $value,
                 'static' => false,
-                'template' => self::DEFAULT_TEMPLATE
+                'template' => $field::DEFAULT_TEMPLATE
             ]
         );
     }

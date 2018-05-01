@@ -118,7 +118,7 @@ class Records extends SortableAssociations
     private function query(
         $source,
         int $fieldId,
-        int $siteId
+        int $siteId = null
     ): SortableAssociationQueryInterface {
         return $this->getQuery()
             ->where([
