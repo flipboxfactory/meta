@@ -11,6 +11,7 @@ namespace flipbox\meta\migrations;
 use Craft;
 use craft\db\Migration as InstallMigration;
 use craft\db\Query;
+use craft\records\Field as FieldRecord;
 use craft\records\Element as ElementRecord;
 use craft\records\Site as SiteRecord;
 use flipbox\meta\fields\Meta;
@@ -148,7 +149,7 @@ class Install extends InstallMigration
             $this->db->getForeignKeyName(MetaRecord::tableName(), 'fieldId'),
             MetaRecord::tableName(),
             'fieldId',
-            Field::tableName(),
+            FieldRecord::tableName(),
             'id',
             'CASCADE',
             null

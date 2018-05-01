@@ -324,33 +324,22 @@ class Meta extends Field implements EagerLoadingFieldInterface
      *******************************************/
 
     /**
-     * @param mixed $value
-     * @param Element|ElementInterface $element
-     * @return string
+     * @inheritdoc
+     *
+     * @param MetaQuery $value
+     * @param Element $element
      */
     public function getSearchKeywords($value, ElementInterface $element): string
     {
         /** @var MetaQuery $value */
-
         $keywords = [];
-        $contentService = Craft::$app->getContent();
 
-        /** @var MetaElement $meta */
         foreach ($value->all() as $meta) {
-            $originalContentTable = $contentService->contentTable;
-            $originalFieldContext = $contentService->fieldContext;
-
-            $contentService->contentTable = $meta->getContentTable();
-            $contentService->fieldContext = $meta->getFieldContext();
-
             /** @var Field $field */
-            foreach (Craft::$app->getFields()->getAllFields() as $field) {
+            foreach ($meta->getFieldLayout()->getFields() as $field) {
                 $fieldValue = $meta->getFieldValue($field->handle);
                 $keywords[] = $field->getSearchKeywords($fieldValue, $element);
             }
-
-            $contentService->contentTable = $originalContentTable;
-            $contentService->fieldContext = $originalFieldContext;
         }
 
         return parent::getSearchKeywords($keywords, $element);

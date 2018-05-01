@@ -19,8 +19,6 @@ use yii\db\QueryInterface;
  */
 trait Attributes
 {
-
-
     /**
      * @var int|int[]|false|null The field ID(s). Prefix IDs with "not " to exclude them.
      */

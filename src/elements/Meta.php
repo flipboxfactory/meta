@@ -175,20 +175,18 @@ class Meta extends Element
     }
 
     /**
+     * If the field is translatable, than each individual block is tied to a single site, and thus aren't
+     * translatable. Otherwise all elements belong to all sites, and their content is translatable.
+     *
      * @inheritdoc
      */
     public function getSupportedSites(): array
     {
-        // If the field is translatable, than each individual block is tied to a single site, and thus aren't
-        // translatable. Otherwise all elements belong to all sites, and their content is translatable.
-
         if ($this->ownerSiteId !== null) {
             return [$this->ownerSiteId];
         }
 
-        $owner = $this->getOwner();
-
-        if ($owner) {
+        if (null !== ($owner = $this->getOwner())) {
             $siteIds = [];
 
             foreach (ElementHelper::supportedSitesForElement($owner) as $siteInfo) {
@@ -222,8 +220,11 @@ class Meta extends Element
      */
     public function getHasFreshContent(): bool
     {
-        $owner = $this->getOwner();
-        return $owner ? $owner->getHasFreshContent() : false;
+        if (null === ($owner = $this->getOwner())) {
+            return false;
+        }
+
+        return $owner->getHasFreshContent();
     }
 
     /**

@@ -35,12 +35,11 @@ use yii\base\Exception;
 class Configuration extends Component
 {
     /**
-     * Saves an Meta field's settings.
-     *
      * @param MetaField $metaField
-     *
+     * @return bool
      * @throws \Exception
-     * @return boolean Whether the settings saved successfully.
+     * @throws \Throwable
+     * @throws \yii\db\Exception
      */
     public function afterSave(MetaField $metaField)
     {
@@ -167,12 +166,10 @@ class Configuration extends Component
     }
 
     /**
-     * Deletes an Meta field and content table.
-     *
-     * @param MetaField $field The Meta field.
-     *
+     * @param MetaField $field
+     * @return bool
      * @throws \Exception
-     * @return boolean Whether the field was deleted successfully.
+     * @throws \yii\db\Exception
      */
     public function beforeDelete(MetaField $field)
     {
@@ -212,13 +209,8 @@ class Configuration extends Component
 
 
     /**
-     * Validates a Meta field's settings.
-     *
-     * If the settings don’t validate, any validation errors will be stored on the settings model.
-     *
-     * @param MetaField $metaField The Meta field
-     *
-     * @return boolean Whether the settings validated.
+     * @param MetaField $metaField
+     * @return bool
      */
     public function validate(MetaField $metaField): bool
     {
