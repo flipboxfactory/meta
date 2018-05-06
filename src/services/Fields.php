@@ -192,6 +192,7 @@ class Fields extends SortableFields
     }
 
     /**
+     * @param MetaField $field
      * @param array $values
      * @param ElementInterface $element
      * @return array
@@ -406,68 +407,7 @@ class Fields extends SortableFields
     {
         // If the field is translatable, see if there are any global blocks that should be localized
         if ($field->localize) {
-            $elementQuery = MetaElement::find()
-                ->fieldId($field->id)
-                ->ownerId($ownerId)
-                ->status(null)
-                ->enabledForSite(false)
-                ->limit(null)
-                ->siteId($ownerSiteId)
-                ->ownerSiteId(':empty:');
-
-            $elements = $elementQuery->all();
-
-            if (!empty($elements)) {
-                // Find any relational fields on these blocks
-                $relationFields = [];
-
-                /** @var MetaElement $element */
-                foreach ($elements as $element) {
-                    foreach ($element->getFieldLayout()->getFields() as $field) {
-                        if ($field instanceof BaseRelationField) {
-                            $relationFields[] = $field->handle;
-                        }
-                    }
-                    break;
-                }
-
-                // Prefetch the blocks in all the other sites, in case they have
-                // any localized content
-                $otherSiteBlocks = [];
-                $allSiteIds = Craft::$app->getSites()->getAllSiteIds();
-                foreach ($allSiteIds as $siteId) {
-                    if ($siteId != $ownerSiteId) {
-                        /** @var MetaElement[] $siteElements */
-                        $siteElements = $otherSiteBlocks[$siteId] = $elementQuery->siteId($siteId)->all();
-
-                        // Hard-set the relation IDs
-                        foreach ($siteElements as $element) {
-                            foreach ($relationFields as $handle) {
-                                /** @var ElementQueryInterface $relationQuery */
-                                $relationQuery = $element->getFieldValue($handle);
-                                $element->setFieldValue($handle, $relationQuery->ids());
-                            }
-                        }
-                    }
-                }
-
-                // Explicitly assign the current site's blocks to the current site
-                foreach ($elements as $element) {
-                    $element->ownerSiteId = $ownerSiteId;
-                    Craft::$app->getElements()->saveElement($element, false);
-                }
-
-                // Now save the other sites' blocks as new site-specific blocks
-                foreach ($otherSiteBlocks as $siteId => $siteElements) {
-                    foreach ($siteElements as $element) {
-                        $element->id = null;
-                        $element->contentId = null;
-                        $element->siteId = (int)$siteId;
-                        $element->ownerSiteId = (int)$siteId;
-                        Craft::$app->getElements()->saveElement($element, false);
-                    }
-                }
-            }
+            $this->saveFieldTranslations($field, $ownerId, $ownerSiteId);
         } else {
 
             // Otherwise, see if the field has any localized blocks that should be deleted
@@ -489,6 +429,103 @@ class Fields extends SortableFields
                 }
             }
         }
+    }
+
+    /**
+     * @param MetaField $field
+     * @param int $ownerId
+     * @param int $ownerSiteId
+     * @throws Exception
+     * @throws \Throwable
+     * @throws \craft\errors\ElementNotFoundException
+     */
+    private function saveFieldTranslations(MetaField $field, int $ownerId, int $ownerSiteId)
+    {
+        $elementQuery = MetaElement::find()
+            ->fieldId($field->id)
+            ->ownerId($ownerId)
+            ->status(null)
+            ->enabledForSite(false)
+            ->limit(null)
+            ->siteId($ownerSiteId)
+            ->ownerSiteId(':empty:');
+
+        $elements = $elementQuery->all();
+
+        if (empty($elements)) {
+            return;
+        }
+
+        // Prefetch the blocks in all the other sites, in case they have any localized content
+        $otherSiteMeta = $this->getOtherSiteMeta($elementQuery, $ownerSiteId);
+
+        // Explicitly assign the current site's blocks to the current site
+        foreach ($elements as $element) {
+            $element->ownerSiteId = $ownerSiteId;
+            Craft::$app->getElements()->saveElement($element, false);
+        }
+
+        // Now save the other sites' blocks as new site-specific blocks
+        foreach ($otherSiteMeta as $siteId => $siteElements) {
+            foreach ($siteElements as $element) {
+                $element->id = null;
+                $element->contentId = null;
+                $element->siteId = (int)$siteId;
+                $element->ownerSiteId = (int)$siteId;
+                Craft::$app->getElements()->saveElement($element, false);
+            }
+        }
+    }
+
+    /**
+     * @param MetaQuery $query
+     * @param int $ownerSiteId
+     * @return array
+     */
+    private function getOtherSiteMeta(MetaQuery $query, int $ownerSiteId)
+    {
+        // Find any relational fields
+        $relationFields = $this->getRelationFields($query->all());
+
+        $otherSiteMeta = [];
+        foreach (Craft::$app->getSites()->getAllSiteIds() as $siteId) {
+            if ($siteId != $ownerSiteId) {
+                /** @var MetaElement[] $siteElements */
+                $siteElements = $otherSiteMeta[$siteId] = $query->siteId($siteId)->all();
+
+                // Hard-set the relation IDs
+                foreach ($siteElements as $element) {
+                    foreach ($relationFields as $handle) {
+                        /** @var ElementQueryInterface $relationQuery */
+                        $relationQuery = $element->getFieldValue($handle);
+                        $element->setFieldValue($handle, $relationQuery->ids());
+                    }
+                }
+            }
+        }
+
+        return $otherSiteMeta;
+    }
+
+    /**
+     * @param array $elements
+     * @return array
+     */
+    private function getRelationFields(array $elements)
+    {
+        // Find any relational fields on these blocks
+        $relationFields = [];
+
+        foreach ($elements as $element) {
+            foreach ($element->getFieldLayout()->getFields() as $field) {
+                if ($field instanceof BaseRelationField) {
+                    $relationFields[] = $field->handle;
+                }
+            }
+            break;
+        }
+
+        return $relationFields;
     }
 
     /**
