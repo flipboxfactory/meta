@@ -19,6 +19,7 @@ use craft\db\Query;
 use craft\elements\db\ElementQueryInterface;
 use craft\models\FieldLayout;
 use craft\validators\ArrayValidator;
+use flipbox\ember\helpers\ArrayHelper;
 use flipbox\meta\db\MetaQuery;
 use flipbox\meta\elements\Meta as MetaElement;
 use flipbox\meta\helpers\Field as FieldHelper;
@@ -404,6 +405,11 @@ class Meta extends Field implements EagerLoadingFieldInterface
         foreach ($fields as $fieldId => $fieldConfig) {
             if (!$fieldConfig instanceof FieldInterface) {
 
+                if(empty($fieldConfig['handle'] ?? null)) {
+                    unset($fields[$fieldId]);
+                    continue;
+                }
+
                 /** @noinspection SlowArrayOperationsInLoopInspection */
                 $fieldConfig = array_merge($defaultFieldConfig, $fieldConfig);
 
@@ -433,7 +439,7 @@ class Meta extends Field implements EagerLoadingFieldInterface
      */
     public function afterSave(bool $isNew)
     {
-        MetaPlugin::getInstance()->getConfiguration()->afterSave($this);
+        MetaPlugin::getInstance()->getConfiguration()->save($this);
         parent::afterSave($isNew);
     }
 

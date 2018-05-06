@@ -41,128 +41,57 @@ class Configuration extends Component
      * @throws \Throwable
      * @throws \yii\db\Exception
      */
-    public function afterSave(MetaField $metaField)
+    public function save(MetaField $metaField)
     {
-
         $transaction = Craft::$app->getDb()->beginTransaction();
         try {
 
-            /** @var \craft\services\Content $contentService */
             $contentService = Craft::$app->getContent();
 
-            /** @var \craft\services\Fields $fieldsService */
-            $fieldsService = Craft::$app->getFields();
-
-            // Create the content table first since the element fields will need it
-            $contentTable = FieldHelper::getContentTableName($metaField->id);
+            // Create/Rename table
+            $this->ensureTable($metaField);
 
             // Get the originals
             $originalContentTable = $contentService->contentTable;
             $originalFieldContext = $contentService->fieldContext;
-            $originalFieldPrefix = $contentService->fieldColumnPrefix;
-            $originalOldFieldPrefix = $fieldsService->oldFieldColumnPrefix;
+            $originalFieldColumnPrefix = $contentService->fieldColumnPrefix;
 
             // Set our content table
-            $contentService->contentTable = $contentTable;
-            $contentService->fieldColumnPrefix = 'field_';
-            $fieldsService->oldFieldColumnPrefix = 'field_';
-
-            // Set our field context
+            $contentService->contentTable = FieldHelper::getContentTableName($metaField->id);
             $contentService->fieldContext = FieldHelper::getContextById($metaField->id);
+            $contentService->fieldColumnPrefix = 'field_';
 
-            // Get existing fields
-            $oldFieldsById = ArrayHelper::index($fieldsService->getAllFields(), 'id');
+            // Delete old fields
+            $this->deleteOldFields($metaField);
 
-            /** @var \craft\base\Field $field */
-            foreach ($metaField->getFieldLayout()->getFields() as $field) {
-                if (!$field->getIsNew()) {
-                    ArrayHelper::remove($oldFieldsById, $field->id);
-                }
-            }
-
-            // Drop the old fields
-            foreach ($oldFieldsById as $field) {
-                if (!$fieldsService->deleteField($field)) {
-                    throw new Exception(Craft::t('app', 'An error occurred while deleting this Meta field.'));
-                }
-            }
-
-            // Refresh the schema cache
-            Craft::$app->getDb()->getSchema()->refresh();
-
-            // Do we need to create/rename the content table?
-            if (!Craft::$app->getDb()->tableExists($contentTable)) {
-                $this->createContentTable($contentTable);
-                Craft::$app->getDb()->getSchema()->refresh();
-            }
-
-            // Save the fields and field layout
-            // -------------------------------------------------------------
-
-            $fieldLayoutFields = [];
-            $sortOrder = 0;
-
-            // Set our content table
-            $contentService->contentTable = $contentTable;
-
-            // Save field
-            /** @var \craft\base\Field $field */
-            foreach ($metaField->getFieldLayout()->getFields() as $field) {
-                // Save field (we validated earlier)
-                if (!$fieldsService->saveField($field, false)) {
-                    throw new Exception('An error occurred while saving this Meta field.');
-                }
-
-                // Set sort order
-                $field->sortOrder = ++$sortOrder;
-
-                $fieldLayoutFields[] = $field;
-            }
+            // Save fields
+            $this->saveNewFields($metaField);
 
             // Revert to originals
             $contentService->contentTable = $originalContentTable;
             $contentService->fieldContext = $originalFieldContext;
-            $contentService->fieldColumnPrefix = $originalFieldPrefix;
-            $fieldsService->oldFieldColumnPrefix = $originalOldFieldPrefix;
-
-            $fieldLayout = $metaField->getFieldLayout();
-
-            $fieldLayoutTab = new FieldLayoutTab();
-            $fieldLayoutTab->name = 'Fields';
-            $fieldLayoutTab->sortOrder = 1;
-            $fieldLayoutTab->setFields($fieldLayoutFields);
-
-            $fieldLayout->setTabs([$fieldLayoutTab]);
-            $fieldLayout->setFields($fieldLayoutFields);
-
-            $fieldsService->saveLayout($fieldLayout);
-
-            // Update the element & record with our new field layout ID
-            $metaField->setFieldLayout($fieldLayout);
-            $metaField->fieldLayoutId = (int)$fieldLayout->id;
+            $contentService->fieldColumnPrefix = $originalFieldColumnPrefix;
 
             // Save the fieldLayoutId via settings
             /** @var FieldRecord $fieldRecord */
             $fieldRecord = FieldRecord::findOne($metaField->id);
             $fieldRecord->settings = $metaField->getSettings();
 
-            if ($fieldRecord->save(true, ['settings'])) {
-                // Commit field changes
-                $transaction->commit();
-
-                return true;
-            } else {
-                $metaField->addError('settings', Craft::t('meta', 'Unable to save settings.'));
+            if (!$fieldRecord->save(true, ['settings'])) {
+                $metaField->addError(
+                    'settings',
+                    Craft::t('meta', 'Unable to save settings.')
+                );
+                $transaction->rollback();
+                return false;
             }
         } catch (\Exception $e) {
             $transaction->rollback();
-
             throw $e;
         }
 
-        $transaction->rollback();
-
-        return false;
+        $transaction->commit();
+        return true;
     }
 
     /**
@@ -475,5 +404,97 @@ class Configuration extends Component
         Craft::$app->getView()->setNamespace($originalNamespace);
 
         return $fieldTypes;
+    }
+
+    /**
+     * @param MetaField $metaField
+     * @throws Exception
+     * @throws \Throwable
+     */
+    private function deleteOldFields(MetaField $metaField)
+    {
+        /** @var \craft\services\Fields $fieldsService */
+        $fieldsService = Craft::$app->getFields();
+
+        // Get existing fields
+        $oldFields = $fieldsService->getAllFields(FieldHelper::getContextById($metaField->id));
+        $oldFieldsById = ArrayHelper::index($oldFields, 'id');
+
+        /** @var \craft\base\Field $field */
+        foreach ($metaField->getFieldLayout()->getFields() as $field) {
+            if (!$field->getIsNew()) {
+                ArrayHelper::remove($oldFieldsById, $field->id);
+            }
+        }
+
+        // Drop the old fields
+        foreach ($oldFieldsById as $field) {
+            if (!$fieldsService->deleteField($field)) {
+                throw new Exception(Craft::t('app', 'An error occurred while deleting this Meta field.'));
+            }
+        }
+
+        // Refresh the schema cache
+        Craft::$app->getDb()->getSchema()->refresh();
+    }
+
+    /**
+     * @param MetaField $metaField
+     * @throws Exception
+     * @throws \Throwable
+     */
+    private function saveNewFields(MetaField $metaField)
+    {
+        $fieldLayoutFields = [];
+        $sortOrder = 0;
+
+        /** @var \craft\services\Fields $fieldsService */
+        $fieldsService = Craft::$app->getFields();
+
+        // Save field
+        /** @var \craft\base\Field $field */
+        foreach ($metaField->getFieldLayout()->getFields() as $field) {
+            // Save field (we validated earlier)
+            if (!$fieldsService->saveField($field, false)) {
+                throw new Exception('An error occurred while saving this Meta field.');
+            }
+
+            // Set sort order
+            $field->sortOrder = ++$sortOrder;
+
+            $fieldLayoutFields[] = $field;
+        }
+
+        $fieldLayout = $metaField->getFieldLayout();
+
+        $fieldLayoutTab = new FieldLayoutTab([
+            'name' => 'Fields',
+            'sortOrder' => 1,
+            'fields' => $fieldLayoutFields
+        ]);
+
+        $fieldLayout->setTabs([$fieldLayoutTab]);
+        $fieldLayout->setFields($fieldLayoutFields);
+
+        $fieldsService->saveLayout($fieldLayout);
+
+        // Update the element & record with our new field layout ID
+        $metaField->setFieldLayout($fieldLayout);
+        $metaField->fieldLayoutId = (int)$fieldLayout->id;
+    }
+
+    /**
+     * @param MetaField $metaField
+     */
+    private function ensureTable(MetaField $metaField)
+    {
+        // Create the content table first since the element fields will need it
+        $contentTable = FieldHelper::getContentTableName($metaField->id);
+
+        // Do we need to create/rename the content table?
+        if (!Craft::$app->getDb()->tableExists($contentTable)) {
+            $this->createContentTable($contentTable);
+            Craft::$app->getDb()->getSchema()->refresh();
+        }
     }
 }
