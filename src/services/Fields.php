@@ -283,7 +283,6 @@ class Fields extends SortableFields
             $elements = $query->all(); // existing meta
         }
 
-
         $transaction = Craft::$app->getDb()->beginTransaction();
         try {
             // If this is a preexisting element, make sure that the blocks for this field/owner respect the field's translation setting
@@ -293,53 +292,9 @@ class Fields extends SortableFields
 
             // If the query is set to fetch blocks of a different owner, we're probably duplicating an element
             if ($query->ownerId && $query->ownerId != $owner->id) {
-                // Make sure this owner doesn't already have meta
-                $newQuery = clone $query;
-                $newQuery->ownerId = $owner->id;
-                if (!$newQuery->exists()) {
-                    // Duplicate the blocks for the new owner
-                    $elementsService = Craft::$app->getElements();
-                    foreach ($elements as $element) {
-                        $elementsService->duplicateElement($element, [
-                            'ownerId' => $owner->id,
-                            'ownerSiteId' => $field->localize ? $owner->siteId : null
-                        ]);
-                    }
-                }
+                $this->duplicate($field, $owner, $query, $elements);
             } else {
-                $elementIds = [];
-
-                // Only propagate the blocks if the owner isn't being propagated
-                $propagate = !$owner->propagating;
-
-                /** @var MetaElement $element */
-                foreach ($elements as $element) {
-                    $element->setOwnerId($owner->id);
-                    $element->ownerSiteId = ($field->localize ? $owner->siteId : null);
-                    $element->propagating = $owner->propagating;
-
-                    Craft::$app->getElements()->saveElement($element, false, $propagate);
-
-                    $elementIds[] = $element->id;
-                }
-
-                // Delete any elements that shouldn't be there anymore
-                $deleteElementsQuery = MetaElement::find()
-                    ->status(null)
-                    ->enabledForSite(false)
-                    ->ownerId($owner->id)
-                    ->fieldId($field->id)
-                    ->where(['not', ['elements.id' => $elementIds]]);
-
-                if ($field->localize) {
-                    $deleteElementsQuery->ownerSiteId($owner->siteId);
-                } else {
-                    $deleteElementsQuery->siteId($owner->siteId);
-                }
-
-                foreach ($deleteElementsQuery->all() as $deleteElement) {
-                    Craft::$app->getElements()->deleteElement($deleteElement);
-                }
+                $this->save($field, $owner, $elements);
             }
 
             $transaction->commit();
@@ -349,6 +304,92 @@ class Fields extends SortableFields
         }
 
         return;
+    }
+
+    /**
+     * @param MetaField $field
+     * @param ElementInterface $owner
+     * @param MetaQuery $query
+     * @param array $elements
+     * @throws \Throwable
+     * @throws \craft\errors\InvalidElementException
+     */
+    private function duplicate(MetaField $field, ElementInterface $owner, MetaQuery $query, array $elements)
+    {
+        /** @var Element $owner */
+
+        $newQuery = clone $query;
+        $newQuery->ownerId = $owner->id;
+        if (!$newQuery->exists()) {
+            // Duplicate for the new owner
+            $elementsService = Craft::$app->getElements();
+            foreach ($elements as $element) {
+                $elementsService->duplicateElement($element, [
+                    'ownerId' => $owner->id,
+                    'ownerSiteId' => $field->localize ? $owner->siteId : null
+                ]);
+            }
+        }
+    }
+
+    /**
+     * @param MetaField $field
+     * @param ElementInterface $owner
+     * @param MetaElement[] $elements
+     * @throws Exception
+     * @throws \Throwable
+     * @throws \craft\errors\ElementNotFoundException
+     */
+    private function save(MetaField $field, ElementInterface $owner, array $elements)
+    {
+        /** @var Element $owner */
+
+        $elementIds = [];
+
+        // Only propagate the blocks if the owner isn't being propagated
+        $propagate = !$owner->propagating;
+
+        /** @var MetaElement $element */
+        foreach ($elements as $element) {
+            $element->setOwnerId($owner->id);
+            $element->ownerSiteId = ($field->localize ? $owner->siteId : null);
+            $element->propagating = $owner->propagating;
+
+            Craft::$app->getElements()->saveElement($element, false, $propagate);
+
+            $elementIds[] = $element->id;
+        }
+
+        // Delete any elements that have been removed
+        $this->deleteOld($field, $owner, $elementIds);
+    }
+
+    /**
+     * @param MetaField $field
+     * @param ElementInterface $owner
+     * @param array $excludeIds
+     * @throws \Throwable
+     */
+    private function deleteOld(MetaField $field, ElementInterface $owner, array $excludeIds)
+    {
+        /** @var Element $owner */
+
+        $deleteElementsQuery = MetaElement::find()
+            ->status(null)
+            ->enabledForSite(false)
+            ->ownerId($owner->id)
+            ->fieldId($field->id)
+            ->where(['not', ['elements.id' => $excludeIds]]);
+
+        if ($field->localize) {
+            $deleteElementsQuery->ownerSiteId($owner->siteId);
+        } else {
+            $deleteElementsQuery->siteId($owner->siteId);
+        }
+
+        foreach ($deleteElementsQuery->all() as $deleteElement) {
+            Craft::$app->getElements()->deleteElement($deleteElement);
+        }
     }
 
     /**
