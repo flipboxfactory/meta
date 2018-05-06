@@ -32,7 +32,7 @@ trait OwnerMutator
      * @param $id
      * @return $this
      */
-    public function setOwnerId(int $id)
+    public function setOwnerId(int $id = null)
     {
         $this->ownerId = $id;
         return $this;
