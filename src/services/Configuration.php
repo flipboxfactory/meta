@@ -45,7 +45,6 @@ class Configuration extends Component
     {
         $transaction = Craft::$app->getDb()->beginTransaction();
         try {
-
             $contentService = Craft::$app->getContent();
 
             // Create/Rename table

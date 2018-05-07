@@ -49,13 +49,13 @@
                             return this.elementSort.$targetItem;
                         }
                     }, this),
-                    collapseDraggees: true,
-                    magnetStrength: 4,
-                    helperLagBase: 1.5,
-                    helperOpacity: 0.9,
-                    onSortChange: $.proxy(function () {
-                        this.elementSelect.resetItemOrder();
-                    }, this)
+                collapseDraggees: true,
+                magnetStrength: 4,
+                helperLagBase: 1.5,
+                helperOpacity: 0.9,
+                onSortChange: $.proxy(function () {
+                    this.elementSelect.resetItemOrder();
+                }, this)
                 });
 
                 this.elementSelect = new Garnish.Select(this.$elementContainer, $elements, {

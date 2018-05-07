@@ -285,10 +285,14 @@ class Meta extends Field implements EagerLoadingFieldInterface
                 ArrayValidator::class,
                 'min' => $this->min ?: null,
                 'max' => $this->max ?: null,
-                'tooFew' => Craft::t('app',
-                    '{attribute} should contain at least {min, number} {min, plural, one{block} other{blocks}}.'),
-                'tooMany' => Craft::t('app',
-                    '{attribute} should contain at most {max, number} {max, plural, one{block} other{blocks}}.'),
+                'tooFew' => Craft::t(
+                    'app',
+                    '{attribute} should contain at least {min, number} {min, plural, one{block} other{blocks}}.'
+                ),
+                'tooMany' => Craft::t(
+                    'app',
+                    '{attribute} should contain at most {max, number} {max, plural, one{block} other{blocks}}.'
+                ),
                 'skipOnEmpty' => false,
                 'on' => Element::SCENARIO_LIVE,
             ],
@@ -404,8 +408,7 @@ class Meta extends Field implements EagerLoadingFieldInterface
 
         foreach ($fields as $fieldId => $fieldConfig) {
             if (!$fieldConfig instanceof FieldInterface) {
-
-                if(empty($fieldConfig['handle'] ?? null)) {
+                if (empty($fieldConfig['handle'] ?? null)) {
                     unset($fields[$fieldId]);
                     continue;
                 }

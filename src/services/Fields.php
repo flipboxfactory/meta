@@ -286,7 +286,8 @@ class Fields extends SortableFields
 
         $transaction = Craft::$app->getDb()->beginTransaction();
         try {
-            // If this is a preexisting element, make sure that the blocks for this field/owner respect the field's translation setting
+            // If this is a preexisting element, make sure that the blocks for this field/owner respect the
+            // field's translation setting
             if ($query->ownerId) {
                 $this->applyFieldTranslationSetting($query->ownerId, $query->siteId, $field);
             }
@@ -409,7 +410,6 @@ class Fields extends SortableFields
         if ($field->localize) {
             $this->saveFieldTranslations($field, $ownerId, $ownerSiteId);
         } else {
-
             // Otherwise, see if the field has any localized blocks that should be deleted
             foreach (Craft::$app->getSites()->getAllSiteIds() as $siteId) {
                 if ($siteId != $ownerSiteId) {

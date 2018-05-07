@@ -98,7 +98,7 @@ class MetaQuery extends ElementQuery implements SortableAssociationQueryInterfac
                 ->where(['id' => $this->id])
                 ->scalar();
 
-            if(empty($fieldId)) {
+            if (empty($fieldId)) {
                 return;
             }
 
