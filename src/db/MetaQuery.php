@@ -65,7 +65,7 @@ class MetaQuery extends ElementQuery implements SortableAssociationQueryInterfac
     /**
      * Sets the [[ownerSiteId]] and [[siteId]] properties.
      *
-     * @param int|string|null $value The property value
+     * @param int|null $value The property value
      * @return static self reference
      */
     public function ownerSiteId($value)
@@ -92,11 +92,17 @@ class MetaQuery extends ElementQuery implements SortableAssociationQueryInterfac
         $this->contentTable = null;
 
         if (!$this->fieldId && $this->id && is_numeric($this->id)) {
-            $this->fieldId = (new Query())
+            $fieldId = (new Query())
                 ->select('fieldId')
                 ->from(MetaRecord::tableName())
                 ->where(['id' => $this->id])
                 ->scalar();
+
+            if(empty($fieldId)) {
+                return;
+            }
+
+            $this->fieldId = (int) $fieldId;
         }
 
         if ($this->fieldId && is_numeric($this->fieldId)) {

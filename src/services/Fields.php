@@ -413,6 +413,7 @@ class Fields extends SortableFields
             // Otherwise, see if the field has any localized blocks that should be deleted
             foreach (Craft::$app->getSites()->getAllSiteIds() as $siteId) {
                 if ($siteId != $ownerSiteId) {
+                    /** @var MetaQuery $elements */
                     $elements = MetaElement::find()
                         ->fieldId($field->id)
                         ->ownerId($ownerId)
@@ -441,6 +442,7 @@ class Fields extends SortableFields
      */
     private function saveFieldTranslations(MetaField $field, int $ownerId, int $ownerSiteId)
     {
+        /** @var MetaQuery $elements */
         $elementQuery = MetaElement::find()
             ->fieldId($field->id)
             ->ownerId($ownerId)

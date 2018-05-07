@@ -193,13 +193,12 @@ class Configuration extends Component
     /**
      * @param MetaField $field
      * @param $value
-     * @param ElementInterface|null $element
      * @return string
      * @throws Exception
      * @throws \Twig_Error_Loader
      * @throws \yii\base\InvalidConfigException
      */
-    public function getInputHtml(MetaField $field, $value, ElementInterface $element = null): string
+    public function getInputHtml(MetaField $field, $value): string
     {
         $id = Craft::$app->getView()->formatInputId($field->handle);
 
