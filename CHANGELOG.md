@@ -1,5 +1,10 @@
 Changelog
 =========
+
+## 1.0.0-rc - 2018-05-17
+### Changed
+- Supporting Craft 3.0.0
+
 ## 1.0.0-beta.8 - 2017-09-29
 ### Changed
 - Meta elements now have status and conform to enabled/disabled query.
