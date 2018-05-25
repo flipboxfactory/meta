@@ -1,5 +1,8 @@
 Changelog
 =========
+## Unreleased
+### Fixed
+- Deprecation error from meta input template
 
 ## 1.0.0-rc - 2018-05-17
 ### Changed

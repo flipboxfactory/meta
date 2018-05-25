@@ -234,7 +234,7 @@ class Configuration extends Component
                 'id' => $id,
                 'name' => $field->handle,
                 'field' => $field,
-                'elements' => $value,
+                'elements' => $value->all(),
                 'static' => false,
                 'template' => $field::DEFAULT_TEMPLATE
             ]
