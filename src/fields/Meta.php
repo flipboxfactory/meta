@@ -38,7 +38,7 @@ class Meta extends Field implements EagerLoadingFieldInterface
     /**
      * Default layout template
      */
-    const DEFAULT_TEMPLATE = FieldHelper::TEMPLATE_PATH . DIRECTORY_SEPARATOR . 'layout';
+    const DEFAULT_TEMPLATE = FieldHelper::TEMPLATE_PATH . '/layout';
 
     /**
      * Maximum number of meta

@@ -229,7 +229,7 @@ class Configuration extends Component
         }
 
         return Craft::$app->getView()->renderTemplate(
-            FieldHelper::TEMPLATE_PATH . DIRECTORY_SEPARATOR . 'input',
+            FieldHelper::TEMPLATE_PATH . '/input',
             [
                 'id' => $id,
                 'name' => $field->handle,
@@ -287,7 +287,7 @@ class Configuration extends Component
 //        $field->setFields($fields);
 
         return Craft::$app->getView()->renderTemplate(
-            FieldHelper::TEMPLATE_PATH . DIRECTORY_SEPARATOR . 'settings',
+            FieldHelper::TEMPLATE_PATH . '/settings',
             [
                 'field' => $field,
                 'fieldTypes' => $fieldTypeOptions,
