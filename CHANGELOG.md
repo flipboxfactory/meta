@@ -3,6 +3,7 @@ Changelog
 ## Unreleased
 ### Fixed
 - Deprecation error from meta input template
+- Setting a null owner would thrown an error
 
 ## 1.0.0-rc - 2018-05-17
 ### Changed

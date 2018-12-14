@@ -126,6 +126,10 @@ trait OwnerMutator
      */
     protected function internalResolveOwner($owner = null)
     {
+        if ($owner === null) {
+            return null;
+        }
+
         if ($owner instanceof ElementInterface) {
             return $owner;
         }
