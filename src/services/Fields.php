@@ -353,7 +353,7 @@ class Fields extends SortableFields
 
         /** @var MetaElement $element */
         foreach ($elements as $element) {
-            $element->setOwnerId($owner->id);
+            $element->setOwner($owner);
             $element->ownerSiteId = ($field->localize ? $owner->siteId : null);
             $element->propagating = $owner->propagating;
 
