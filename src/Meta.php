@@ -11,6 +11,7 @@ namespace flipbox\meta;
 use Craft;
 use craft\base\Plugin;
 use craft\events\RegisterComponentTypesEvent;
+use craft\records\Field;
 use craft\services\Elements;
 use craft\services\Fields;
 use craft\web\twig\variables\CraftVariable;

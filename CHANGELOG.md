@@ -1,9 +1,10 @@
 Changelog
 =========
-## Unreleased
+## 1.0.0-rc.1 - 2019-01-10
 ### Fixed
 - Deprecation error from meta input template
 - Setting a null owner would thrown an error
+- Error when attempting to un-install plugin
 
 ## 1.0.0-rc - 2018-05-17
 ### Changed
