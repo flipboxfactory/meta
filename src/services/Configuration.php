@@ -19,6 +19,7 @@ use craft\helpers\StringHelper;
 use craft\models\FieldLayoutTab;
 use craft\records\Field as FieldRecord;
 use flipbox\meta\db\MetaQuery;
+use flipbox\meta\elements\Meta;
 use flipbox\meta\fields\Meta as MetaField;
 use flipbox\meta\helpers\Field as FieldHelper;
 use flipbox\meta\migrations\ContentTable;
@@ -192,17 +193,18 @@ class Configuration extends Component
     /**
      * @param MetaField $field
      * @param $value
+     * @param ElementInterface|null $element
      * @return string
      * @throws Exception
      * @throws \Twig_Error_Loader
      * @throws \yii\base\InvalidConfigException
      */
-    public function getInputHtml(MetaField $field, $value): string
+    public function getInputHtml(MetaField $field, $value, ElementInterface $element = null): string
     {
         $id = Craft::$app->getView()->formatInputId($field->handle);
 
         // Get the field data
-        $fieldInfo = $this->getFieldInfoForInput($field);
+        $fieldInfo = $this->getFieldInfoForInput($field, $element);
 
         Craft::$app->getView()->registerAssetBundle(Input::class);
 
@@ -303,7 +305,7 @@ class Configuration extends Component
      *
      * @return array
      */
-    private function getFieldInfoForInput(MetaField $field): array
+    private function getFieldInfoForInput(MetaField $field, ElementInterface $element = null): array
     {
         // Set a temporary namespace for these
         $originalNamespace = Craft::$app->getView()->getNamespace();
@@ -312,6 +314,15 @@ class Configuration extends Component
             $originalNamespace
         );
         Craft::$app->getView()->setNamespace($namespace);
+
+        // Create a fake meta so the field types have a way to get at the owner element, if there is one
+        $meta = new Meta();
+        $meta->fieldId = $field->id;
+
+        if ($element) {
+            $meta->setOwner($element);
+            $meta->siteId = $element->siteId;
+        }
 
         $fieldLayoutFields = $field->getFieldLayout()->getFields();
 
@@ -327,7 +338,8 @@ class Configuration extends Component
                 '_includes/fields',
                 [
                     'namespace' => null,
-                    'fields' => $fieldLayoutFields
+                    'fields' => $fieldLayoutFields,
+                    'element' => $meta
                 ]
             )
         );

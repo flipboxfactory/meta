@@ -233,7 +233,7 @@ class Meta extends Field implements EagerLoadingFieldInterface
      */
     public function getInputHtml($value, ElementInterface $element = null): string
     {
-        return MetaPlugin::getInstance()->getConfiguration()->getInputHtml($this, $value);
+        return MetaPlugin::getInstance()->getConfiguration()->getInputHtml($this, $value, $element);
     }
 
     /**

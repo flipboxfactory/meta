@@ -1,5 +1,9 @@
 Changelog
 =========
+## 1.0.0-rc.2 - 2019-01-22
+### Fixed
+- Multisite error when loading fields on non-primary sites.
+
 ## 1.0.0-rc.1 - 2019-01-10
 ### Fixed
 - Deprecation error from meta input template
