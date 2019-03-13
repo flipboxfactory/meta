@@ -16,6 +16,7 @@ use craft\fields\Matrix;
 use craft\helpers\ArrayHelper;
 use craft\helpers\Json;
 use craft\helpers\StringHelper;
+use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
 use craft\records\Field as FieldRecord;
 use flipbox\meta\db\MetaQuery;
@@ -104,29 +105,54 @@ class Configuration extends Component
     {
         $transaction = Craft::$app->getDb()->beginTransaction();
         try {
-            // Delete field layout
-            Craft::$app->getFields()->deleteLayoutById($field->fieldLayoutId);
+
+            // First delete the elements
+            $elements = Meta::find()
+                ->fieldId($field->id)
+                ->all();
+
+            foreach ($elements as $element) {
+                Craft::$app->getElements()->deleteElement($element);
+            }
+
+            /** @var FieldLayout $fieldLayout */
+            $fieldLayout = $field->getFieldLayout();
 
             // Get content table name
             $contentTableName = FieldHelper::getContentTableName($field->id);
+
+            $contentService = Craft::$app->getContent();
+
+            // Get the originals
+            $originalContentTable = $contentService->contentTable;
+            $originalFieldContext = $contentService->fieldContext;
+            $originalFieldColumnPrefix = $contentService->fieldColumnPrefix;
+
+            // Set our content table
+            $contentService->contentTable = $contentTableName;
+            $contentService->fieldContext = FieldHelper::getContextById($field->id);
+            $contentService->fieldColumnPrefix = 'field_';
+
+            // Delete fields
+            foreach ($fieldLayout->getFields() as $field) {
+                Craft::$app->getFields()->deleteField($field);
+            }
+
+            // Revert to originals
+            $contentService->contentTable = $originalContentTable;
+            $contentService->fieldContext = $originalFieldContext;
+            $contentService->fieldColumnPrefix = $originalFieldColumnPrefix;
 
             // Drop the content table
             Craft::$app->getDb()->createCommand()
                 ->dropTableIfExists($contentTableName)
                 ->execute();
 
-            // find any of the context fields
-            $subFieldRecords = FieldRecord::find()
-                ->andWhere(['like', 'context', MetaRecord::tableAlias() . ':%', false])
-                ->all();
-
-            // Delete them
-            /** @var MetaRecord $subFieldRecord */
-            foreach ($subFieldRecords as $subFieldRecord) {
-                Craft::$app->getFields()->deleteFieldById($subFieldRecord->id);
-            }
+            // Delete field layout
+            Craft::$app->getFields()->deleteLayout($fieldLayout);
 
             $transaction->commit();
+
             return true;
         } catch (\Exception $e) {
             // Revert
