@@ -1,5 +1,9 @@
 Changelog
 =========
+## 1.0.0-rc.3 - 2019-03-13
+### Fixed
+- Error when deleting a meta field.
+
 ## 1.0.0-rc.2 - 2019-01-22
 ### Fixed
 - Multisite error when loading fields on non-primary sites.

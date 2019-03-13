@@ -1,7 +1,7 @@
 {
 	"name": "flipboxfactory/meta",
 	"description": "A simple, repeatable field type",
-	"version": "1.0.0-rc.2",
+	"version": "1.0.0-rc.3",
 	"type": "craft-plugin",
 	"keywords": [
 		"flipbox",
