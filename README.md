@@ -6,6 +6,9 @@
 [![Quality Score](https://img.shields.io/scrutinizer/g/flipboxfactory/meta.svg?style=flat-square)](https://scrutinizer-ci.com/g/flipboxfactory/meta)
 [![Total Downloads](https://img.shields.io/packagist/dt/flipboxfactory/meta.svg?style=flat-square)](https://packagist.org/packages/flipboxfactory/meta)
 
+## IMPORTANT NOTE 
+This plugin is no longer in active developed.  It is recommended you use Matrix, Super Table or other suitable repeatable field type.
+
 ## Installation
 
 To install, use composer:

@@ -403,6 +403,10 @@ class Configuration extends Component
             Matrix::class
         ];
 
+        if (Craft::$app->getPlugins()->getPlugin('super-table')) {
+            $disallowedFields[] = \verbb\supertable\fields\SuperTableField::class;
+        }
+
         $fieldTypes = [];
 
         // Set a temporary namespace for these

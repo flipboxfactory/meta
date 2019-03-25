@@ -1,5 +1,9 @@
 Changelog
 =========
+## 1.0.0-rc.4 - 2019-03-25
+### Fixed
+- Prevent Super Table nesting
+
 ## 1.0.0-rc.3 - 2019-03-13
 ### Fixed
 - Error when deleting a meta field.
